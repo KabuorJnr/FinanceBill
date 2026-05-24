@@ -1,0 +1,11 @@
+{
+  "name": "finance-bill-2026",
+  "version": "1.0.0",
+  "description": "Static civic education page for Finance Bill 2026",
+  "scripts": {
+    "start": "serve -s . -l 3000"
+  },
+  "devDependencies": {
+    "serve": "^14.0.1"
+  }
+}
