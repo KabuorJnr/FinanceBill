@@ -214,5 +214,8 @@
         }
       }
     }
-  }
+  },
+  "trustedDependencies": [
+    "@shopify/react-native-skia"
+  ]
 }

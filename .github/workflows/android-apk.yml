@@ -67,6 +67,12 @@ jobs:
           EXPO_PUBLIC_MICROSOFT_TENANT=common
           ENV
 
+      - name: Install Skia native binaries
+        # Bun can skip dependency install scripts; Skia's copies its prebuilt
+        # Android/iOS libraries into place and the native build needs them.
+        working-directory: example
+        run: node "$(dirname "$(node -p "require.resolve('@shopify/react-native-skia/package.json')")")/scripts/install-libs.js"
+
       - name: Generate the Android project
         working-directory: example
         run: bunx expo prebuild --platform android --no-install
