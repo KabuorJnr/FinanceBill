@@ -18,6 +18,9 @@ import {
   ARTIST,
   ArtistAvatar,
   ConcertTray,
+  HOTELS,
+  HotelsTray,
+  REGIONS,
   SHOWS,
   TIERS,
   formatKES,
@@ -107,10 +110,17 @@ export default function TikitiScreen() {
           <View style={styles.section}>
             <Text style={tikitiType.title}>On Tour</Text>
             <Text style={tikitiType.caption}>
-              {SHOWS.length} shows across {CITIES.join(', ')}. Book tickets, get
-              directions and order a boda, tuk-tuk or car to the venue, all from
-              one tray.
+              {SHOWS.length} shows across {CITIES.join(', ')}. Book tickets,
+              find a hotel, get directions and order a boda, tuk-tuk or car to
+              the venue, all from one tray.
             </Text>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={tikitiType.title}>Where to Stay</Text>
+            <HotelsTray>
+              <StayCard />
+            </HotelsTray>
           </View>
         </View>
       </ScrollView>
@@ -160,6 +170,39 @@ function UpcomingPill(props: IPressableRefProps) {
         tintColor={tikitiColors.text}
       />
       <Text style={styles.pillText}>Upcoming Concerts</Text>
+    </Pressable>
+  );
+}
+
+function StayCard(props: IPressableRefProps) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      {...props}
+      style={({ pressed }) => [styles.stay, pressed && styles.pressed]}
+    >
+      <View style={styles.stayIcon}>
+        <SymbolView
+          name="bed.double.fill"
+          size={20}
+          weight="semibold"
+          tintColor={tikitiColors.text}
+        />
+      </View>
+      <View style={styles.grow}>
+        <Text style={tikitiType.headline}>
+          {HOTELS.length} hotels, resorts and lodges
+        </Text>
+        <Text style={tikitiType.caption} numberOfLines={2}>
+          {REGIONS.join(' · ')}
+        </Text>
+      </View>
+      <SymbolView
+        name="chevron.right"
+        size={13}
+        weight="semibold"
+        tintColor={tikitiColors.textTertiary}
+      />
     </Pressable>
   );
 }
@@ -264,6 +307,23 @@ const styles = StyleSheet.create({
   songIndex: {
     width: 16,
     textAlign: 'center',
+  },
+  stay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: 14,
+    borderRadius: 18,
+    borderCurve: 'continuous',
+    backgroundColor: tikitiColors.card,
+  },
+  stayIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0A84FF',
   },
   bar: {
     position: 'absolute',

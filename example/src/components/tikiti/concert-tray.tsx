@@ -14,6 +14,14 @@ import { AnimatedTabs } from '../artist/animated-tabs';
 import { SymbolView } from '../symbol-view';
 import { CheckoutTray } from './checkout-tray';
 import {
+  HotelView,
+  NEW_STAY,
+  NearbyHotelsView,
+  StayView,
+  type IStay,
+} from './hotel-views';
+import { hotelsNear, type IHotel } from './hotels.data';
+import {
   ARTIST,
   DRIVERS,
   MAX_TICKETS,
@@ -76,6 +84,8 @@ interface IDraft {
   quantity: number;
   mode: TTravelMode;
   rideId: TRideId;
+  hotel: IHotel | null;
+  stay: IStay;
 }
 
 function newDraft(): IDraft {
@@ -85,6 +95,8 @@ function newDraft(): IDraft {
     quantity: 2,
     mode: 'ride',
     rideId: 'boda',
+    hotel: null,
+    stay: NEW_STAY,
   };
 }
 
@@ -115,6 +127,9 @@ export function ConcertTray({ children }: { children: ReactElement }) {
             rides: { title: 'Choose a Ride' },
             ride: { title: 'Ride Booked', back: false },
             tickets: { title: 'Tickets' },
+            hotels: { title: 'Where to Stay' },
+            hotel: { title: draft.hotel?.name ?? 'Hotel' },
+            stay: { title: '', back: false },
           }}
         />
         <Tray.Body>
@@ -123,6 +138,32 @@ export function ConcertTray({ children }: { children: ReactElement }) {
           </Tray.View>
           <Tray.View name="concert">
             <ConcertView show={show} />
+          </Tray.View>
+          <Tray.View name="hotels">
+            <NearbyHotelsView
+              venue={show.venue}
+              onSelect={(hotel) => update({ hotel, stay: NEW_STAY })}
+            />
+          </Tray.View>
+          <Tray.View name="hotel">
+            {draft.hotel && (
+              <HotelView
+                hotel={draft.hotel}
+                venue={show.venue}
+                checkIn={show.date}
+                stay={draft.stay}
+                onStayChange={(stay) => update({ stay })}
+              />
+            )}
+          </Tray.View>
+          <Tray.View name="stay">
+            {draft.hotel && (
+              <StayView
+                hotel={draft.hotel}
+                stay={draft.stay}
+                checkIn={show.date}
+              />
+            )}
           </Tray.View>
           <Tray.View name="directions">
             <DirectionsView
@@ -217,6 +258,7 @@ function Fact({
 function ConcertView({ show }: { show: IShow }) {
   const { setView } = useTray();
   const { venue } = show;
+  const nearbyCount = hotelsNear(venue.coordinate).length;
 
   return (
     <View style={styles.page}>
@@ -232,6 +274,22 @@ function ConcertView({ show }: { show: IShow }) {
         <Fact label="Date" value={formatLongDate(show.date)} />
         <Fact label="Time" value={formatTime(show.time)} divider />
         <Fact label="Artist" value={ARTIST.name} divider />
+      </Group>
+      <Group>
+        <ListRow
+          leading={
+            <SymbolView
+              name="bed.double.fill"
+              size={18}
+              weight="semibold"
+              tintColor={tikitiColors.textSecondary}
+            />
+          }
+          title="Where to Stay"
+          subtitle={`${nearbyCount} hotels near ${venue.area}`}
+          chevron
+          onPress={() => setView('hotels')}
+        />
       </Group>
       <View style={styles.buttons}>
         <TikitiButton

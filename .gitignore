@@ -82,3 +82,8 @@ lib/
 ios/generated
 android/generated
 
+
+# local env files (API keys)
+.env
+.env.*
+!.env.example

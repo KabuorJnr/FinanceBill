@@ -98,6 +98,8 @@ const MATERIAL_NAMES: Partial<Record<SFSymbol, string>> = {
   'mountain.2.fill': 'landscape',
   'cross.case.fill': 'local_hospital',
   'ticket.fill': 'confirmation_number',
+  'bed.double.fill': 'hotel',
+  'tent.fill': 'camping',
   'steeringwheel': 'drive_eta',
   'phone.fill': 'call',
   'wallet.pass': 'wallet',

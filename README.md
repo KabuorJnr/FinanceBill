@@ -14,27 +14,22 @@ Based on [rit3zh/morphlet](https://github.com/rit3zh/morphlet) (MIT). The librar
   3. **Directions**: the route from your location with **Ride**, Drive, Walk and Matatu tabs, plus a local tip. Drive, Walk and Matatu hand off to Apple or Google Maps. **Ride** books a Boda Boda, Tuk-Tuk or car priced in KSh by distance, then shows the driver and their yellow number plate.
   4. **Tickets**: General Admission, Reserved Seat, Front Pit or VIP in KSh, up to 8 per order.
   5. **Checkout**, stacked on top: name and Kenyan phone number (`07…`, `01…`, `+254…`), pay with M-Pesa or Airtel Money, a simulated STK push, then **"Uko ndani! You're going"**. Tickets go to your phone by SMS.
+- **Where to Stay**: 76 well-known hotels, beach resorts, safari lodges and camps across Nairobi, the Coast, Western & Nyanza, the Rift Valley, Mount Kenya & Central and the safari parks (Maasai Mara, Amboseli, Tsavo, Shaba). Each concert lists hotels nearest the venue. The artist page has a nationwide list by region. Pick nights and rooms, see an estimated total, get directions or reserve (demo).
 - **Playground**: the Send and Activity demos use M-Pesa, Airtel Money and bank balances in KES with Kenyan names, in place of crypto.
 
-Data lives in `example/src/components/tikiti/tikiti.data.ts`. The artist, tour, prices and drivers are fictional, venue coordinates are approximate, and nothing is charged.
+Data lives in `example/src/components/tikiti/tikiti.data.ts` and `hotels.data.ts`. The artist, tour, ticket prices and drivers are fictional. Hotels are real places, but the list is curated, not complete, and their rates are rough indications. Coordinates are approximate, and nothing is charged or booked.
 
 ### Maps setup
 
 - **iOS** uses Apple Maps. No key needed.
-- **Android** uses Google Maps. Set a key with Maps SDK for Android enabled before you prebuild or run:
+- **Android** uses Google Maps and needs a key with Maps SDK for Android enabled. Copy `example/.env.example` to `example/.env` and set `GOOGLE_MAPS_API_KEY`:
 
 ```sh
-GOOGLE_MAPS_API_KEY=your-key bun example android
+cp example/.env.example example/.env   # then paste your key
+bun example android
 ```
 
-`example/app.config.js` passes the key to the `react-native-maps` config plugin, so it is never committed.
-
-```tsx
-<Tray.Root>
-  <Tray.Trigger morph>…</Tray.Trigger>
-  <Tray.Content>…</Tray.Content>
-</Tray.Root>
-```
+Expo loads `example/.env` automatically, and `example/app.config.js` passes the key to the `react-native-maps` config plugin. `.env` is gitignored, so the key is never committed. A Maps key ends up inside the Android app, so restrict it to your package name and signing certificate in Google Cloud Console.
 
 ## Installation
 

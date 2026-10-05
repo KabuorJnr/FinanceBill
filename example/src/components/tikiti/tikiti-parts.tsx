@@ -14,7 +14,7 @@ import {
   View,
   type TextInputProps,
 } from 'react-native';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import MapView, { Marker, Polyline, type LatLng } from 'react-native-maps';
 import { Tray, useTray } from 'morphlet';
 
 import { sfFont } from '../../utils';
@@ -290,9 +290,16 @@ export function Field({ icon, prefix, divider, style, ...rest }: IFieldProps) {
   );
 }
 
-interface IVenueMapProps {
-  venue: IVenue;
-  showRoute?: boolean;
+export interface IMapPin {
+  coordinate: LatLng;
+  icon: SFSymbol;
+  color?: string;
+}
+
+interface IPinMapProps {
+  pins: IMapPin[];
+  /** Draws the rider's position and a route from it to the first pin. */
+  origin?: LatLng;
   height?: number;
 }
 
@@ -307,12 +314,11 @@ function useTracksViewChanges() {
   return Platform.OS === 'android' ? tracks : false;
 }
 
-export function VenueMap({ venue, showRoute, height = 150 }: IVenueMapProps) {
-  const origin = venue.city.origin.coordinate;
-  const region = showRoute
-    ? regionFor([origin, venue.coordinate])
-    : regionFor([venue.coordinate]);
+export function PinMap({ pins, origin, height = 150 }: IPinMapProps) {
+  const points = pins.map((pin) => pin.coordinate);
+  const region = regionFor(origin ? [origin, ...points] : points);
   const tracksViewChanges = useTracksViewChanges();
+  const target = pins[0];
 
   return (
     <View style={[styles.map, { height }]}>
@@ -328,10 +334,10 @@ export function VenueMap({ venue, showRoute, height = 150 }: IVenueMapProps) {
         toolbarEnabled={false}
         showsPointsOfInterests={false}
       >
-        {showRoute && (
+        {origin && target && (
           <>
             <Polyline
-              coordinates={routeBetween(origin, venue.coordinate)}
+              coordinates={routeBetween(origin, target.coordinate)}
               strokeColor={tikitiColors.accent}
               strokeWidth={4}
               lineCap="round"
@@ -345,22 +351,49 @@ export function VenueMap({ venue, showRoute, height = 150 }: IVenueMapProps) {
             </Marker>
           </>
         )}
-        <Marker
-          coordinate={venue.coordinate}
-          anchor={{ x: 0.5, y: 0.5 }}
-          tracksViewChanges={tracksViewChanges}
-        >
-          <View style={styles.pin}>
-            <SymbolView
-              name="ticket.fill"
-              size={13}
-              weight="semibold"
-              tintColor={tikitiColors.text}
-            />
-          </View>
-        </Marker>
+        {pins.map((pin, index) => (
+          <Marker
+            key={`${pin.coordinate.latitude},${pin.coordinate.longitude}`}
+            coordinate={pin.coordinate}
+            anchor={{ x: 0.5, y: 0.5 }}
+            tracksViewChanges={tracksViewChanges}
+            zIndex={pins.length - index}
+          >
+            <View
+              style={[
+                styles.pin,
+                { backgroundColor: pin.color ?? tikitiColors.accent },
+              ]}
+            >
+              <SymbolView
+                name={pin.icon}
+                size={13}
+                weight="semibold"
+                tintColor={tikitiColors.text}
+              />
+            </View>
+          </Marker>
+        ))}
       </MapView>
     </View>
+  );
+}
+
+export function VenueMap({
+  venue,
+  showRoute,
+  height,
+}: {
+  venue: IVenue;
+  showRoute?: boolean;
+  height?: number;
+}) {
+  return (
+    <PinMap
+      pins={[{ coordinate: venue.coordinate, icon: 'ticket.fill' }]}
+      origin={showRoute ? venue.city.origin.coordinate : undefined}
+      height={height}
+    />
   );
 }
 
