@@ -4,7 +4,10 @@
     "slug": "morphlet-example",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "morphlet-example",
+    "scheme": [
+      "morphlet-example",
+      "tikiti"
+    ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {

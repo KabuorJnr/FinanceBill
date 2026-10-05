@@ -27,8 +27,13 @@ interface IEventsContext {
   backend: IEventsBackend['kind'];
   ready: boolean;
   error: string | null;
+  /** Signed in, but the organiser profile (name and phone) is missing. */
+  needsProfile: boolean;
   signUp: (input: ISignUp) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWith: IEventsBackend['signInWith'];
+  resetPassword: (email: string) => Promise<void>;
+  completeProfile: IEventsBackend['completeProfile'];
   signOut: () => Promise<void>;
   publishEvent: (event: IEvent) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
@@ -90,8 +95,12 @@ export function EventsProvider({
       backend: backend.kind,
       ready,
       error,
+      needsProfile: !!organizer && !organizer.phone,
       signUp: (input) => backend.signUp(input),
       signIn: (email, password) => backend.signIn(email, password),
+      signInWith: (provider) => backend.signInWith(provider),
+      resetPassword: (email) => backend.resetPassword(email),
+      completeProfile: (profile) => backend.completeProfile(profile),
       signOut: () => backend.signOut(),
       publishEvent: (event) => backend.publishEvent(event),
       deleteEvent: (id) => backend.deleteEvent(id),

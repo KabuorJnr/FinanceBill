@@ -38,7 +38,7 @@ Expo loads `example/.env` automatically, and `example/app.config.js` passes the 
 Posted events and organiser accounts use **Firebase** (Auth plus Firestore). Without a Firebase config, the app falls back to storing them on the phone, behind the same interface (`events.backend.ts`).
 
 1. In the [Firebase console](https://console.firebase.google.com/) for project `social-app-2d78a`, open **Project settings → General → Your apps** and add a **Web app** if there isn't one. Copy its `apiKey` and `appId` into `example/.env`. The other `EXPO_PUBLIC_FIREBASE_*` values are already filled in; see `example/.env.example`.
-2. **Authentication → Sign-in method**: enable **Email/Password**.
+2. **Authentication → Sign-in method**: enable **Email/Password**, **Google** and **Microsoft** (see _Sign-in with Google and Microsoft_ below).
 3. **Firestore Database**: create a database, then deploy the rules in `example/firebase/`:
 
    ```sh
@@ -48,6 +48,21 @@ Posted events and organiser accounts use **Firebase** (Auth plus Firestore). Wit
    ```
 
    Anyone can read events. Only a signed-in organiser can post, and only the organiser who posted an event can change or delete it.
+
+#### Sign-in with Google and Microsoft
+
+Organisers can sign up with Google, Microsoft or email and password. Email accounts can reset their password. First-time Google or Microsoft users add a company name and M-Pesa phone number before posting. Firebase's web popups don't work in React Native apps, so each provider signs in natively and passes a credential to Firebase (`signInWithCredential`). Both need a development build (`bun example ios` / `android`), not Expo Go.
+
+- **Google** (`@react-native-google-signin/google-signin`):
+  1. Enable Google in Firebase Authentication. Copy the **Web client ID** from its _Web SDK configuration_ into `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`.
+  2. **Android**: add an Android app in Firebase project settings with the app's package name (`morphlet.example` in `app.json`) and your signing key's **SHA-1**. For debug builds, get it with `cd android && ./gradlew signingReport`.
+  3. **iOS**: add an iOS app with the bundle ID, then copy `CLIENT_ID` from its `GoogleService-Info.plist` into `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`. `app.config.js` derives the URL scheme the plugin needs.
+- **Microsoft** (`expo-auth-session`, OAuth code flow with PKCE):
+  1. In the Azure portal, open **Microsoft Entra ID → App registrations → New registration**. Choose _Accounts in any organizational directory and personal Microsoft accounts_, and under **Mobile and desktop applications** add the redirect URI `tikiti://auth`.
+  2. Copy the **Application (client) ID** into `EXPO_PUBLIC_MICROSOFT_CLIENT_ID`.
+  3. In Firebase Authentication, enable **Microsoft** with that client ID and a client secret from **Certificates & secrets**. Add the Firebase callback URL it shows as a **Web** redirect URI in Azure too.
+
+Until a provider's client ID is set, its button shows as unavailable and the other sign-in options keep working.
 
 Data model: `events/{eventId}` (the event with `organizerId`) and `organizers/{uid}` (company name, phone and email).
 

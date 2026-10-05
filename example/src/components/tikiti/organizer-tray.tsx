@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { Tray, useTray } from 'morphlet';
 
-import { AnimatedTabs } from '../artist/animated-tabs';
 import { SymbolView } from '../symbol-view';
 import {
   CATEGORIES,
@@ -20,6 +19,7 @@ import {
   type IOrganizer,
   type TCategory,
 } from './events.data';
+import { AuthView, ProfileView, friendlyError } from './auth-view';
 import { useEvents } from './events.store';
 import {
   CITIES,
@@ -32,7 +32,6 @@ import {
   formatTime,
   isValidDate,
   isValidTime,
-  normalizeKenyanPhone,
   todayInKenya,
   type ICity,
 } from './tikiti.data';
@@ -88,15 +87,6 @@ function newEventDraft(): IEventDraft {
     ],
   };
 }
-
-const AUTH_TABS = [
-  {
-    value: 'signUp' as const,
-    label: 'Create Account',
-    icon: 'person.badge.plus' as const,
-  },
-  { value: 'signIn' as const, label: 'Sign In', icon: 'person.fill' as const },
-];
 
 function cityOf(draft: IEventDraft): ICity {
   return CITIES.find((option) => option.id === draft.cityId) ?? CITIES[0]!;
@@ -158,14 +148,16 @@ function buildEvent(draft: IEventDraft, organizer: IOrganizer): IEvent {
 }
 
 export function OrganizerTray({ children }: { children: ReactElement }) {
-  const { organizer } = useEvents();
+  const { organizer, needsProfile } = useEvents();
   const [draft, setDraft] = useState<IEventDraft>(newEventDraft);
   const [published, setPublished] = useState<IEvent | null>(null);
   const update = (patch: Partial<IEventDraft>) =>
     setDraft((current) => ({ ...current, ...patch }));
 
   return (
-    <Tray.Root defaultView={organizer ? 'mine' : 'account'}>
+    <Tray.Root
+      defaultView={organizer ? (needsProfile ? 'profile' : 'mine') : 'account'}
+    >
       <Tray.Trigger asChild morph>
         {children}
       </Tray.Trigger>
@@ -174,6 +166,7 @@ export function OrganizerTray({ children }: { children: ReactElement }) {
         <TikitiHeader
           views={{
             account: { title: 'For Organisers' },
+            profile: { title: 'Your Profile', back: false },
             mine: { title: 'Your Events', back: false },
             details: { title: 'New Event' },
             venue: { title: 'Venue' },
@@ -185,7 +178,10 @@ export function OrganizerTray({ children }: { children: ReactElement }) {
         />
         <Tray.Body>
           <Tray.View name="account">
-            <AccountView />
+            <AuthView />
+          </Tray.View>
+          <Tray.View name="profile">
+            <ProfileView />
           </Tray.View>
           <Tray.View name="mine">
             <MineView onNew={() => setDraft(newEventDraft())} />
@@ -217,137 +213,6 @@ export function OrganizerTray({ children }: { children: ReactElement }) {
 function ErrorText({ message }: { message: string | null }) {
   if (!message) return null;
   return <Text style={[tikitiType.caption, styles.error]}>{message}</Text>;
-}
-
-function friendlyError(error: unknown): string {
-  const code = (error as { code?: string }).code ?? '';
-  if (code.includes('email-already-in-use'))
-    return 'That email already has an account. Sign in instead.';
-  if (code.includes('invalid-credential') || code.includes('wrong-password'))
-    return 'Email or password is incorrect.';
-  if (code.includes('weak-password'))
-    return 'Use a password of at least 6 characters.';
-  if (code.includes('invalid-email')) return 'Enter a valid email address.';
-  if (code.includes('permission-denied'))
-    return 'You don’t have permission to do that.';
-  if (code.includes('network')) return 'No connection. Try again.';
-  return error instanceof Error ? error.message : 'Something went wrong.';
-}
-
-function AccountView() {
-  const { signUp, signIn, backend } = useEvents();
-  const { setView } = useTray();
-  const [mode, setMode] = useState<'signUp' | 'signIn'>('signUp');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const normalized = normalizeKenyanPhone(phone);
-  const emailOk = /^\S+@\S+\.\S+$/.test(email.trim());
-  const canSubmit =
-    emailOk &&
-    (backend === 'device' || password.length >= 6) &&
-    (mode === 'signIn' || (name.trim().length > 1 && normalized !== null));
-
-  const submit = async () => {
-    if (!canSubmit || busy) return;
-    Keyboard.dismiss();
-    setBusy(true);
-    setError(null);
-    try {
-      if (mode === 'signUp') {
-        await signUp({
-          name: name.trim(),
-          phone: normalized!,
-          email: email.trim(),
-          password,
-        });
-      } else {
-        await signIn(email.trim(), password);
-      }
-      setView('mine');
-    } catch (failure) {
-      setError(friendlyError(failure));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <View style={styles.page}>
-      <Text style={tikitiType.caption}>
-        Event organisers and promoters can post events, set ticket prices and
-        sell through Tikiti.
-        {backend === 'device'
-          ? ' Firebase isn’t set up yet, so accounts and events stay on this phone.'
-          : ''}
-      </Text>
-      <AnimatedTabs tabs={AUTH_TABS} value={mode} onChange={setMode} />
-      <Group>
-        {mode === 'signUp' && (
-          <>
-            <Field
-              icon="building.2.fill"
-              placeholder="Company or organiser name"
-              value={name}
-              onChangeText={setName}
-              autoCapitalize="words"
-            />
-            <Field
-              divider
-              icon="phone.fill"
-              prefix="+254"
-              placeholder="712 345 678"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              maxLength={13}
-            />
-          </>
-        )}
-        <Field
-          divider={mode === 'signUp'}
-          icon="envelope.fill"
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-          textContentType="emailAddress"
-        />
-        <Field
-          divider
-          icon="checkmark.shield"
-          placeholder={
-            backend === 'device' ? 'Password (not needed offline)' : 'Password'
-          }
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoCapitalize="none"
-          textContentType={mode === 'signUp' ? 'newPassword' : 'password'}
-          returnKeyType="go"
-          onSubmitEditing={submit}
-        />
-      </Group>
-      <ErrorText message={error} />
-      <TikitiButton
-        label={
-          busy
-            ? 'Please wait…'
-            : mode === 'signUp'
-              ? 'Create Organiser Account'
-              : 'Sign In'
-        }
-        disabled={!canSubmit || busy}
-        onPress={submit}
-      />
-    </View>
-  );
 }
 
 function MineView({ onNew }: { onNew: () => void }) {

@@ -1,8 +1,11 @@
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithCredential,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
+  updateProfile,
 } from 'firebase/auth';
 import {
   collection,
@@ -17,6 +20,11 @@ import {
 } from 'firebase/firestore';
 import { File, Paths } from 'expo-file-system';
 
+import {
+  providerCredential,
+  signOutProviders,
+  type TSocialProvider,
+} from './auth-providers';
 import type { IEvent, IOrganizer } from './events.data';
 import { firebase } from './firebase';
 import { todayInKenya, venueById } from './tikiti.data';
@@ -45,6 +53,11 @@ export interface IEventsBackend {
   ): () => void;
   signUp(input: ISignUp): Promise<void>;
   signIn(email: string, password: string): Promise<void>;
+  /** Google or Microsoft. Reports whether the organiser profile is missing. */
+  signInWith(provider: TSocialProvider): Promise<{ needsProfile: boolean }>;
+  resetPassword(email: string): Promise<void>;
+  /** Saves company name and phone for accounts made with Google/Microsoft. */
+  completeProfile(profile: { name: string; phone: string }): Promise<void>;
   signOut(): Promise<void>;
   publishEvent(event: IEvent): Promise<void>;
   deleteEvent(id: string): Promise<void>;
@@ -130,6 +143,26 @@ export function createDeviceBackend(): IEventsBackend {
         throw new Error('No organiser with that email on this phone.');
       commit({ ...state, organizer: match });
     },
+    async signInWith() {
+      throw new Error(
+        'Google and Microsoft sign-in need Firebase. Use email for now.'
+      );
+    },
+    async resetPassword() {
+      throw new Error('Password reset needs Firebase.');
+    },
+    async completeProfile({ name, phone }) {
+      await load();
+      if (!state.organizer) throw new Error('Sign in first.');
+      const organizer = { ...state.organizer, name, phone };
+      commit({
+        ...state,
+        organizer,
+        accounts: state.accounts.map((account) =>
+          account.id === organizer.id ? organizer : account
+        ),
+      });
+    },
     async signOut() {
       await load();
       commit({ ...state, organizer: null });
@@ -159,6 +192,18 @@ export function createDeviceBackend(): IEventsBackend {
 export function createFirebaseBackend(): IEventsBackend {
   const { auth, db } = firebase();
   const organizerListeners = new Set<(o: IOrganizer | null) => void>();
+  const announce = (organizer: IOrganizer) =>
+    organizerListeners.forEach((listener) => listener(organizer));
+
+  const saveProfile = async (organizer: IOrganizer) => {
+    await setDoc(doc(db, 'organizers', organizer.id), {
+      name: organizer.name,
+      phone: organizer.phone,
+      email: organizer.email,
+      updatedAt: new Date().toISOString(),
+    });
+    announce(organizer);
+  };
 
   return {
     kind: 'firebase',
@@ -187,9 +232,10 @@ export function createFirebaseBackend(): IEventsBackend {
           () => null
         );
         const data = profile?.data() as Omit<IOrganizer, 'id'> | undefined;
+        // No phone means the profile still needs completing.
         onChange({
           id: user.uid,
-          name: data?.name ?? user.email ?? 'Organiser',
+          name: data?.name ?? user.displayName ?? '',
           phone: data?.phone ?? '',
           email: data?.email ?? user.email ?? '',
         });
@@ -205,21 +251,33 @@ export function createFirebaseBackend(): IEventsBackend {
         email,
         password
       );
-      await setDoc(doc(db, 'organizers', user.uid), {
-        name,
-        phone,
-        email,
-        createdAt: new Date().toISOString(),
-      });
+      await updateProfile(user, { displayName: name }).catch(() => null);
       // Auth fired before the profile existed, so announce the full profile.
-      const organizer = { id: user.uid, name, phone, email };
-      organizerListeners.forEach((listener) => listener(organizer));
+      await saveProfile({ id: user.uid, name, phone, email });
     },
     async signIn(email, password) {
       await signInWithEmailAndPassword(auth, email, password);
     },
+    async signInWith(provider) {
+      const credential = await providerCredential(provider);
+      const { user } = await signInWithCredential(auth, credential);
+      const profile = await getDoc(doc(db, 'organizers', user.uid)).catch(
+        () => null
+      );
+      return { needsProfile: !profile?.data()?.phone };
+    },
+    async resetPassword(email) {
+      await sendPasswordResetEmail(auth, email);
+    },
+    async completeProfile({ name, phone }) {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Sign in first.');
+      await updateProfile(user, { displayName: name }).catch(() => null);
+      await saveProfile({ id: user.uid, name, phone, email: user.email ?? '' });
+    },
     async signOut() {
       await firebaseSignOut(auth);
+      await signOutProviders();
     },
     async publishEvent(event) {
       const user = auth.currentUser;

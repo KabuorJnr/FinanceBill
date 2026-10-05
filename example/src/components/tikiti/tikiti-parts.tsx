@@ -266,9 +266,17 @@ interface IFieldProps extends TextInputProps {
   icon: SFSymbol;
   prefix?: string;
   divider?: boolean;
+  trailing?: ReactNode;
 }
 
-export function Field({ icon, prefix, divider, style, ...rest }: IFieldProps) {
+export function Field({
+  icon,
+  prefix,
+  divider,
+  trailing,
+  style,
+  ...rest
+}: IFieldProps) {
   return (
     <View style={[styles.field, divider && styles.rowDivider]}>
       <SymbolView
@@ -286,6 +294,7 @@ export function Field({ icon, prefix, divider, style, ...rest }: IFieldProps) {
         style={[tikitiType.body, styles.input, style]}
         {...rest}
       />
+      {trailing}
     </View>
   );
 }
