@@ -55,7 +55,7 @@ Organisers can sign up with Google, Microsoft or email and password. Email accou
 
 - **Google** (`@react-native-google-signin/google-signin`):
   1. Enable Google in Firebase Authentication. Copy the **Web client ID** from its _Web SDK configuration_ into `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`.
-  2. **Android**: add an Android app in Firebase project settings with the app's package name (`morphlet.example` in `app.json`) and your signing key's **SHA-1**. For debug builds, get it with `cd android && ./gradlew signingReport`.
+  2. **Android**: add an Android app in Firebase project settings with the app's package name (`com.tikiti.app`) and your signing key's **SHA-1**. For debug builds, get it with `cd android && ./gradlew signingReport`.
   3. **iOS**: add an iOS app with the bundle ID, then copy `CLIENT_ID` from its `GoogleService-Info.plist` into `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`. `app.config.js` derives the URL scheme the plugin needs.
 - **Microsoft** (`expo-auth-session`, OAuth code flow with PKCE):
   1. In the Azure portal, open **Microsoft Entra ID → App registrations → New registration**. Choose _Accounts in any organizational directory and personal Microsoft accounts_, and under **Mobile and desktop applications** add the redirect URI `tikiti://auth`.
@@ -67,6 +67,18 @@ Until a provider's client ID is set, its button shows as unavailable and the oth
 Data model: `events/{eventId}` (the event with `organizerId`) and `organizers/{uid}` (company name, phone and email).
 
 The app only needs the public Web config. **Never put a service account (Admin SDK) key in the app or in git.** `.gitignore` blocks the usual file names.
+
+### Web app and Android APK
+
+The app (`com.tikiti.app`) opens on Tikiti. The original morphlet demos are under **Morphlet demos** (`/demos`).
+
+- **Web**: `cd example && bun run build:web` writes `example/dist`. Host it on Firebase with `cd example/firebase && npx firebase-tools deploy --only hosting`, which is preconfigured for single-page routing. On the web:
+  - Morphlet trays open as an animated overlay card. Close them with the backdrop or Esc.
+  - Maps use OpenStreetMap embeds, which need no key.
+  - Google and Microsoft sign-in use Firebase popups.
+  - Posted events stay in the browser until Firebase is configured.
+  - The Collections demo is native-only.
+- **Android APK**: the **Android APK** GitHub Actions workflow (`.github/workflows/android-apk.yml`) builds a release APK on every push to the app, or on demand from the Actions tab. Download it from the run's _Artifacts_. Add the optional repository secrets listed in the workflow to bake in the Maps key and Firebase/OAuth config. The APK is signed with the debug key; use your own keystore before publishing to Google Play.
 
 ## Installation
 

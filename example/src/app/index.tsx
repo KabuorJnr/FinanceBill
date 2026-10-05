@@ -1,1 +1,1 @@
-export { default } from '../screens/home-screen';
+export { default } from '../screens/tikiti-screen';

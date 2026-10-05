@@ -149,6 +149,17 @@ export function materialNameFor(name: SFSymbol): AndroidSymbol | undefined {
 }
 
 export function SymbolView({ name, weight, ...rest }: SymbolViewProps) {
+  if (Platform.OS === 'web' && typeof name === 'string') {
+    // Browsers have no SF Symbols; draw the Material Symbol Android uses.
+    const isHeavy = typeof weight === 'string' && HEAVY_WEIGHTS.has(weight);
+    return (
+      <ExpoSymbolView
+        name={{ ios: name, web: materialNameFor(name) }}
+        weight={isHeavy ? { ios: weight, android: semiBold } : weight}
+        {...rest}
+      />
+    );
+  }
   if (Platform.OS !== 'android' || typeof name !== 'string') {
     return <ExpoSymbolView name={name} weight={weight} {...rest} />;
   }

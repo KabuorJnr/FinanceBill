@@ -13,7 +13,10 @@ import { maybeCompleteAuthSession } from 'expo-web-browser';
 import {
   GoogleAuthProvider,
   OAuthProvider,
+  signInWithCredential,
+  type Auth,
   type AuthCredential,
+  type UserCredential,
 } from 'firebase/auth';
 
 maybeCompleteAuthSession();
@@ -124,16 +127,20 @@ async function microsoftCredential(): Promise<AuthCredential> {
   });
 }
 
-export function providerCredential(
+/** Native sign-in with the provider, then a Firebase credential sign-in. */
+export async function signInWithSocial(
+  auth: Auth,
   provider: TSocialProvider
-): Promise<AuthCredential> {
+): Promise<UserCredential> {
   if (!isProviderConfigured[provider]) {
     const name = provider === 'google' ? 'Google' : 'Microsoft';
-    return Promise.reject(
-      new Error(`${name} sign-in isn’t set up yet. See the README.`)
-    );
+    throw new Error(`${name} sign-in isn’t set up yet. See the README.`);
   }
-  return provider === 'google' ? googleCredential() : microsoftCredential();
+  const credential =
+    provider === 'google'
+      ? await googleCredential()
+      : await microsoftCredential();
+  return signInWithCredential(auth, credential);
 }
 
 export async function signOutProviders() {

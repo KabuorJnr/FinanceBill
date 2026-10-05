@@ -2,7 +2,6 @@ import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   sendPasswordResetEmail,
-  signInWithCredential,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   updateProfile,
@@ -18,15 +17,15 @@ import {
   setDoc,
   where,
 } from 'firebase/firestore';
-import { File, Paths } from 'expo-file-system';
 
 import {
-  providerCredential,
+  signInWithSocial,
   signOutProviders,
   type TSocialProvider,
 } from './auth-providers';
 import type { IEvent, IOrganizer } from './events.data';
 import { firebase } from './firebase';
+import { readJson, writeJson } from './local-store';
 import { todayInKenya, venueById } from './tikiti.data';
 
 export interface ISignUp {
@@ -76,7 +75,6 @@ interface IDeviceState {
 }
 
 export function createDeviceBackend(): IEventsBackend {
-  const file = () => new File(Paths.document, 'tikiti-events.json');
   let state: IDeviceState = { organizer: null, accounts: [], posted: [] };
   let loaded: Promise<void> | null = null;
   const eventListeners = new Set<(events: IEvent[]) => void>();
@@ -84,9 +82,8 @@ export function createDeviceBackend(): IEventsBackend {
 
   const load = () =>
     (loaded ??= (async () => {
-      const stored = file();
-      if (!stored.exists) return;
-      const parsed = JSON.parse(await stored.text()) as IDeviceState;
+      const parsed = await readJson<IDeviceState>('tikiti-events');
+      if (!parsed) return;
       state = {
         organizer: parsed.organizer ?? null,
         accounts: parsed.accounts ?? [],
@@ -101,9 +98,7 @@ export function createDeviceBackend(): IEventsBackend {
 
   const commit = (next: IDeviceState) => {
     state = next;
-    const stored = file();
-    if (!stored.exists) stored.create();
-    stored.write(JSON.stringify(state));
+    writeJson('tikiti-events', state).catch(() => undefined);
     emit();
   };
 
@@ -259,8 +254,7 @@ export function createFirebaseBackend(): IEventsBackend {
       await signInWithEmailAndPassword(auth, email, password);
     },
     async signInWith(provider) {
-      const credential = await providerCredential(provider);
-      const { user } = await signInWithCredential(auth, credential);
+      const { user } = await signInWithSocial(auth, provider);
       const profile = await getDoc(doc(db, 'organizers', user.uid)).catch(
         () => null
       );

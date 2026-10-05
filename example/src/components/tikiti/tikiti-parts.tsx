@@ -1,12 +1,5 @@
+import { type ComponentRef, type ReactNode, type Ref } from 'react';
 import {
-  useEffect,
-  useState,
-  type ComponentRef,
-  type ReactNode,
-  type Ref,
-} from 'react';
-import {
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -14,14 +7,14 @@ import {
   View,
   type TextInputProps,
 } from 'react-native';
-import MapView, { Marker, Polyline, type LatLng } from 'react-native-maps';
 import { Tray, useTray } from 'morphlet';
 
 import { sfFont } from '../../utils';
 import { TrayCloseButton, TrayIconButton } from '../artist/artist-tray-parts';
 import { SymbolView, type SFSymbol } from '../symbol-view';
-import { dateParts, regionFor, routeBetween, type IVenue } from './tikiti.data';
-import { DARK_MAP_STYLE, tikitiColors } from './tikiti.theme';
+import { PinMap } from './pin-map';
+import { dateParts, type IVenue } from './tikiti.data';
+import { tikitiColors } from './tikiti.theme';
 
 export const tikitiType = {
   title: { fontSize: 20, ...sfFont('700'), color: tikitiColors.text },
@@ -299,94 +292,7 @@ export function Field({
   );
 }
 
-export interface IMapPin {
-  coordinate: LatLng;
-  icon: SFSymbol;
-  color?: string;
-}
-
-interface IPinMapProps {
-  pins: IMapPin[];
-  /** Draws the rider's position and a route from it to the first pin. */
-  origin?: LatLng;
-  height?: number;
-}
-
-// Custom marker views are rasterised on Android; keep tracking changes just
-// long enough to render them, then freeze for performance.
-function useTracksViewChanges() {
-  const [tracks, setTracks] = useState(true);
-  useEffect(() => {
-    const timer = setTimeout(() => setTracks(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
-  return Platform.OS === 'android' ? tracks : false;
-}
-
-export function PinMap({ pins, origin, height = 150 }: IPinMapProps) {
-  const points = pins.map((pin) => pin.coordinate);
-  const region = regionFor(origin ? [origin, ...points] : points);
-  const tracksViewChanges = useTracksViewChanges();
-  const target = pins[0];
-
-  return (
-    <View style={[styles.map, { height }]}>
-      <MapView
-        style={StyleSheet.absoluteFill}
-        region={region}
-        userInterfaceStyle="dark"
-        customMapStyle={DARK_MAP_STYLE}
-        scrollEnabled={false}
-        zoomEnabled={false}
-        rotateEnabled={false}
-        pitchEnabled={false}
-        toolbarEnabled={false}
-        showsPointsOfInterests={false}
-      >
-        {origin && target && (
-          <>
-            <Polyline
-              coordinates={routeBetween(origin, target.coordinate)}
-              strokeColor={tikitiColors.accent}
-              strokeWidth={4}
-              lineCap="round"
-            />
-            <Marker
-              coordinate={origin}
-              anchor={{ x: 0.5, y: 0.5 }}
-              tracksViewChanges={tracksViewChanges}
-            >
-              <View style={styles.origin} />
-            </Marker>
-          </>
-        )}
-        {pins.map((pin, index) => (
-          <Marker
-            key={`${pin.coordinate.latitude},${pin.coordinate.longitude}`}
-            coordinate={pin.coordinate}
-            anchor={{ x: 0.5, y: 0.5 }}
-            tracksViewChanges={tracksViewChanges}
-            zIndex={pins.length - index}
-          >
-            <View
-              style={[
-                styles.pin,
-                { backgroundColor: pin.color ?? tikitiColors.accent },
-              ]}
-            >
-              <SymbolView
-                name={pin.icon}
-                size={13}
-                weight="semibold"
-                tintColor={tikitiColors.text}
-              />
-            </View>
-          </Marker>
-        ))}
-      </MapView>
-    </View>
-  );
-}
+export { PinMap, type IMapPin } from './pin-map';
 
 export function VenueMap({
   venue,
@@ -403,6 +309,22 @@ export function VenueMap({
       origin={showRoute ? venue.city.origin.coordinate : undefined}
       height={height}
     />
+  );
+}
+
+/** The Kenyan flag as solid bands: black, red and green with white edges. */
+export function KenyaBand({ height = 14 }: { height?: number }) {
+  // Three solid bands with white edges, in the flag's 6:1 proportion.
+  const size = { height };
+  const edge = { height: height / 14 };
+  return (
+    <View style={size} accessibilityElementsHidden>
+      <View style={[styles.band, styles.bandBlack]} />
+      <View style={[styles.edge, edge]} />
+      <View style={[styles.band, styles.bandRed]} />
+      <View style={[styles.edge, edge]} />
+      <View style={[styles.band, styles.bandGreen]} />
+    </View>
   );
 }
 
@@ -439,6 +361,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     height: 50,
+    minHeight: 50,
     borderRadius: 25,
   },
   buttonAccent: {
@@ -544,29 +467,20 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 13,
   },
-  map: {
-    overflow: 'hidden',
-    borderRadius: 18,
-    borderCurve: 'continuous',
-    backgroundColor: tikitiColors.card,
+  band: {
+    flex: 2,
   },
-  origin: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 3,
-    borderColor: tikitiColors.text,
-    backgroundColor: '#0A84FF',
+  bandBlack: {
+    backgroundColor: tikitiColors.kenyaBlack,
   },
-  pin: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2.5,
-    borderColor: tikitiColors.text,
-    backgroundColor: tikitiColors.accent,
+  bandRed: {
+    backgroundColor: tikitiColors.kenyaRed,
+  },
+  bandGreen: {
+    backgroundColor: tikitiColors.kenyaGreen,
+  },
+  edge: {
+    backgroundColor: tikitiColors.text,
   },
   // Kenyan rear number plates are yellow with black characters.
   plate: {

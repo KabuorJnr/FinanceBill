@@ -9,8 +9,8 @@ export const tikitiColors = {
   card: 'rgba(255, 255, 255, 0.07)',
   cardPressed: 'rgba(255, 255, 255, 0.13)',
   separator: 'rgba(255, 255, 255, 0.09)',
-  accent: '#E8264A',
-  accentTint: 'rgba(232, 38, 74, 0.2)',
+  accent: '#D21034',
+  accentTint: 'rgba(210, 16, 52, 0.22)',
   // Kenyan flag.
   kenyaBlack: '#0A0A0A',
   kenyaRed: '#BB0000',

@@ -1,4 +1,4 @@
-import { useCallback, useState, type ComponentRef, type Ref } from 'react';
+import { useState, type ComponentRef, type Ref } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -7,7 +7,6 @@ import {
   View,
   type PressableProps,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,6 +18,7 @@ import {
   EventTray,
   HOTELS,
   HotelsTray,
+  KenyaBand,
   NYOTA_TOUR,
   OrganizerTray,
   categoryOf,
@@ -51,11 +51,6 @@ export default function TikitiScreen() {
   );
   const tourStops = events.filter((event) => event.tourId === NYOTA_TOUR.id);
 
-  const goBack = useCallback(() => {
-    if (router.canGoBack()) router.back();
-    else router.replace('/');
-  }, [router]);
-
   return (
     <View style={styles.screen}>
       <StatusBar style="light" />
@@ -68,7 +63,11 @@ export default function TikitiScreen() {
         ]}
       >
         <View style={styles.header}>
-          <RoundButton icon="chevron.left" label="Back" onPress={goBack} />
+          <RoundButton
+            icon="square.grid.2x2.fill"
+            label="Morphlet demos"
+            onPress={() => router.push('/demos')}
+          />
           <View style={styles.grow}>
             <Text style={styles.brand}>Tikiti</Text>
             <Text style={tikitiType.caption}>
@@ -94,17 +93,14 @@ export default function TikitiScreen() {
           onPress={() => router.push('/artist')}
           style={({ pressed }) => [styles.featured, pressed && styles.pressed]}
         >
-          <LinearGradient
-            colors={[tikitiColors.kenyaRed, '#5A0712', tikitiColors.kenyaGreen]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-          <Text style={styles.featuredEyebrow}>FEATURED TOUR</Text>
-          <Text style={styles.featuredTitle}>{NYOTA_TOUR.artist}</Text>
-          <Text style={styles.featuredCaption}>
-            {NYOTA_TOUR.title} · {tourStops.length} shows
-          </Text>
+          <View style={styles.featuredBody}>
+            <Text style={styles.featuredEyebrow}>FEATURED TOUR</Text>
+            <Text style={styles.featuredTitle}>{NYOTA_TOUR.artist}</Text>
+            <Text style={styles.featuredCaption}>
+              {NYOTA_TOUR.title} · {tourStops.length} shows
+            </Text>
+          </View>
+          <KenyaBand />
         </Pressable>
 
         <Filters
@@ -357,10 +353,13 @@ const styles = StyleSheet.create({
   },
   featured: {
     overflow: 'hidden',
-    gap: 2,
-    padding: 18,
     borderRadius: 22,
     borderCurve: 'continuous',
+    backgroundColor: tikitiColors.kenyaRed,
+  },
+  featuredBody: {
+    gap: 2,
+    padding: 18,
   },
   featuredEyebrow: {
     fontSize: 11,

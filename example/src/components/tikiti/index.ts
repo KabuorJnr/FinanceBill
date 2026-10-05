@@ -20,5 +20,5 @@ export {
   formatTime,
   sendMoneyCost,
 } from './tikiti.data';
-export { tikitiType } from './tikiti-parts';
+export { KenyaBand, tikitiType } from './tikiti-parts';
 export { tikitiColors } from './tikiti.theme';

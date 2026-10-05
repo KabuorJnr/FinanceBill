@@ -8,7 +8,6 @@ import {
   View,
   type PressableProps,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,6 +18,7 @@ import {
   EventTray,
   HOTELS,
   HotelsTray,
+  KenyaBand,
   NYOTA_TOUR,
   REGIONS,
   formatPrice,
@@ -59,16 +59,6 @@ export default function ArtistScreen() {
         <View
           style={[styles.hero, { height: Math.round(height * HERO_SHARE) }]}
         >
-          <LinearGradient
-            colors={[
-              tikitiColors.kenyaRed,
-              '#5A0712',
-              tikitiColors.kenyaGreen,
-              tikitiColors.background,
-            ]}
-            locations={[0, 0.45, 0.8, 1]}
-            style={StyleSheet.absoluteFill}
-          />
           <View style={styles.heroContent}>
             <EventTray events={shows} listTitle="Upcoming Concerts">
               <UpcomingPill />
@@ -78,6 +68,7 @@ export default function ArtistScreen() {
               {NYOTA_TOUR.genre} · {NYOTA_TOUR.title}
             </Text>
           </View>
+          <KenyaBand height={21} />
         </View>
 
         <View style={styles.sections}>
@@ -249,12 +240,13 @@ const styles = StyleSheet.create({
   },
   hero: {
     justifyContent: 'flex-end',
+    backgroundColor: tikitiColors.kenyaRed,
   },
   heroContent: {
     alignItems: 'center',
     gap: 10,
     paddingHorizontal: 24,
-    paddingBottom: 12,
+    paddingBottom: 24,
   },
   pill: {
     flexDirection: 'row',
@@ -263,7 +255,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: tikitiColors.kenyaBlack,
   },
   pillText: {
     fontSize: 12,
@@ -284,7 +276,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: tikitiColors.kenyaBlack,
   },
   sections: {
     gap: 28,

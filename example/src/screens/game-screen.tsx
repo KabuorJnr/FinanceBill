@@ -52,7 +52,7 @@ export default function GameScreen() {
 
   const goBack = useCallback(() => {
     if (router.canGoBack()) router.back();
-    else router.replace('/');
+    else router.replace('/demos');
   }, [router]);
 
   return (

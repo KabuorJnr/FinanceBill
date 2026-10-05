@@ -1,12 +1,7 @@
 import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
-import {
-  getAuth,
-  getReactNativePersistence,
-  initializeAuth,
-  type Auth,
-} from 'firebase/auth';
+import type { Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
-import { File, Paths } from 'expo-file-system';
+import { createAuth } from './firebase-auth';
 
 // Expo inlines EXPO_PUBLIC_* variables from example/.env at build time, so
 // each one has to be read with a literal property access.
@@ -23,31 +18,6 @@ export const isFirebaseConfigured = Boolean(
   config.apiKey && config.projectId && config.appId
 );
 
-/** Firebase Auth's key-value persistence, kept in one JSON file. */
-const fileStorage = {
-  file: () => new File(Paths.document, 'tikiti-auth.json'),
-  async read(): Promise<Record<string, string>> {
-    const file = this.file();
-    return file.exists ? JSON.parse(await file.text()) : {};
-  },
-  async write(values: Record<string, string>) {
-    const file = this.file();
-    if (!file.exists) file.create();
-    file.write(JSON.stringify(values));
-  },
-  async getItem(key: string) {
-    return (await this.read())[key] ?? null;
-  },
-  async setItem(key: string, value: string) {
-    await this.write({ ...(await this.read()), [key]: value });
-  },
-  async removeItem(key: string) {
-    const values = await this.read();
-    delete values[key];
-    await this.write(values);
-  },
-};
-
 let services: { app: FirebaseApp; auth: Auth; db: Firestore } | null = null;
 
 export function firebase() {
@@ -58,12 +28,7 @@ export function firebase() {
 
   const isNew = getApps().length === 0;
   const app = isNew ? initializeApp(config) : getApp();
-  // initializeAuth may only run once per app; fast refresh reuses it.
-  const auth = isNew
-    ? initializeAuth(app, {
-        persistence: getReactNativePersistence(fileStorage),
-      })
-    : getAuth(app);
+  const auth = createAuth(app, isNew);
   services = { app, auth, db: getFirestore(app) };
   return services;
 }

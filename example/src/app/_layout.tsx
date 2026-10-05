@@ -26,6 +26,7 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="index" />
+        <Stack.Screen name="demos" />
         <Stack.Screen name="tikiti" />
         <Stack.Screen name="artist" />
         <Stack.Screen name="game" />

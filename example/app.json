@@ -1,18 +1,15 @@
 {
   "expo": {
-    "name": "Morphlet Kenya",
-    "slug": "morphlet-example",
+    "name": "Tikiti",
+    "slug": "tikiti",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": [
-      "morphlet-example",
-      "tikiti"
-    ],
+    "scheme": ["tikiti", "morphlet-example"],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "morphlet.example"
+      "bundleIdentifier": "com.tikiti.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,10 +18,14 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "morphlet.example"
+      "package": "com.tikiti.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "Tikiti",
+      "shortName": "Tikiti",
+      "themeColor": "#0B0B0C",
+      "backgroundColor": "#0B0B0C"
     },
     "plugins": [
       "expo-font",
