@@ -12,7 +12,7 @@ import {
 } from '../playground-tray-parts';
 import { SlidingCheck } from '../animated-check';
 import { AirtelMoneyIcon, BankIcon, MpesaIcon } from '../coin-icons';
-import { formatKES, sendMoneyCost } from '../../safiri/kenya.data';
+import { formatKES, sendMoneyCost } from '../../tikiti/tikiti.data';
 import {
   TRAY_CONTENT,
   playgroundColors,

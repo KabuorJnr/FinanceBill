@@ -10,7 +10,7 @@ import {
 } from '../playground-tray-parts';
 import { playgroundColors, playgroundType } from '../playground.theme';
 import { SegmentedControl } from '../segmented-control';
-import { formatKES, sendMoneyCost } from '../../safiri/kenya.data';
+import { formatKES, sendMoneyCost } from '../../tikiti/tikiti.data';
 
 interface ITransaction {
   id: number;

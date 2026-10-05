@@ -9,10 +9,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "morphlet.example",
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Safiri uses your location to find rides near you."
-      }
+      "bundleIdentifier": "morphlet.example"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,11 +18,7 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "morphlet.example",
-      "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
-      ]
+      "package": "morphlet.example"
     },
     "web": {
       "favicon": "./assets/favicon.png"

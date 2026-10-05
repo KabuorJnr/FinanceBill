@@ -8,14 +8,15 @@ Based on [rit3zh/morphlet](https://github.com/rit3zh/morphlet) (MIT). The librar
 
 ## What's Kenyan about it
 
-- **Safiri** (`example/src/screens/safiri-screen.tsx`): a ride-hailing map built on `react-native-maps`.
-  - Five cities: Nairobi, Mombasa, Kisumu, Nakuru and Eldoret, each with real landmarks (KICC, JKIA, Sarit Centre, Fort Jesus, Nyali Beach, Dunga Beach, Lake Nakuru National Park, Kipchoge Keino Stadium and more).
-  - Ride types priced in KES: Boda Boda, Tuk-Tuk, Matatu, Safiri Go and Safiri XL. Fares come from the trip distance.
-  - Checkout with M-Pesa, Airtel Money or cash. The app checks Kenyan mobile numbers (`07…`, `01…`, `+254…`) and walks through a simulated STK push before showing the driver, the vehicle and its yellow number plate.
-  - Every button morphs into its tray: the city picker, "Where to?", the suggestion chips and "Cancel trip".
+- **Tikiti** (`example/src/screens/tikiti-screen.tsx`) follows morphlet's concert demo: an artist page whose buttons morph into one tray that covers the whole night out.
+  1. **Upcoming Concerts**: shows grouped by month at Kenyan venues: Kasarani Stadium, Uhuru Gardens, Fort Jesus, Mama Ngina Waterfront, Jomo Kenyatta Sports Ground (Kisumu), Afraha Stadium (Nakuru) and Kipchoge Keino Stadium (Eldoret).
+  2. **Concert**: a live map of the venue with the date, time, **Directions** and **Tickets**.
+  3. **Directions**: the route from your location with **Ride**, Drive, Walk and Matatu tabs, plus a local tip. Drive, Walk and Matatu hand off to Apple or Google Maps. **Ride** books a Boda Boda, Tuk-Tuk or car priced in KSh by distance, then shows the driver and their yellow number plate.
+  4. **Tickets**: General Admission, Reserved Seat, Front Pit or VIP in KSh, up to 8 per order.
+  5. **Checkout**, stacked on top: name and Kenyan phone number (`07…`, `01…`, `+254…`), pay with M-Pesa or Airtel Money, a simulated STK push, then **"Uko ndani! You're going"**. Tickets go to your phone by SMS.
 - **Playground**: the Send and Activity demos use M-Pesa, Airtel Money and bank balances in KES with Kenyan names, in place of crypto.
 
-City and landmark data is in `example/src/components/safiri/kenya.data.ts`. Coordinates are approximate, and fares and M-Pesa charges are illustrative.
+Data lives in `example/src/components/tikiti/tikiti.data.ts`. The artist, tour, prices and drivers are fictional, venue coordinates are approximate, and nothing is charged.
 
 ### Maps setup
 

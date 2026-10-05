@@ -1,0 +1,499 @@
+import type { LatLng, Region } from 'react-native-maps';
+
+import type { SFSymbol } from '../symbol-view';
+
+// The artist, tour, line-up and prices are fictional and only for the demo.
+// Venue coordinates are approximate.
+
+export interface ICity {
+  id: string;
+  name: string;
+  /** Stand-in for the rider's current location in this city. */
+  origin: { name: string; coordinate: LatLng };
+}
+
+export interface IVenue {
+  id: string;
+  name: string;
+  area: string;
+  city: ICity;
+  coordinate: LatLng;
+  tip: string;
+}
+
+function city(
+  id: string,
+  name: string,
+  origin: string,
+  latitude: number,
+  longitude: number
+): ICity {
+  return {
+    id,
+    name,
+    origin: { name: origin, coordinate: { latitude, longitude } },
+  };
+}
+
+const NAIROBI = city(
+  'nairobi',
+  'Nairobi',
+  'Kenyatta Avenue, CBD',
+  -1.2841,
+  36.8219
+);
+const MOMBASA = city('mombasa', 'Mombasa', 'Moi Avenue', -4.0614, 39.6712);
+const KISUMU = city(
+  'kisumu',
+  'Kisumu',
+  'Oginga Odinga Street',
+  -0.1022,
+  34.7617
+);
+const NAKURU = city('nakuru', 'Nakuru', 'Kenyatta Avenue', -0.2866, 36.0672);
+const ELDORET = city('eldoret', 'Eldoret', 'Uganda Road', 0.5167, 35.2733);
+
+function venue(
+  id: string,
+  name: string,
+  area: string,
+  venueCity: ICity,
+  latitude: number,
+  longitude: number,
+  tip: string
+): IVenue {
+  return {
+    id,
+    name,
+    area,
+    city: venueCity,
+    coordinate: { latitude, longitude },
+    tip,
+  };
+}
+
+export const VENUES = {
+  kasarani: venue(
+    'kasarani',
+    'Kasarani Stadium',
+    'Kasarani',
+    NAIROBI,
+    -1.2219,
+    36.893,
+    'Thika Road jams on show nights. Leave early or take a boda for the last stretch.'
+  ),
+  uhuruGardens: venue(
+    'uhuru-gardens',
+    'Uhuru Gardens',
+    'Lang’ata',
+    NAIROBI,
+    -1.3184,
+    36.8039,
+    'Parking on Lang’ata Road fills up fast. Arrive before gates open.'
+  ),
+  fortJesus: venue(
+    'fort-jesus',
+    'Fort Jesus',
+    'Old Town',
+    MOMBASA,
+    -4.0626,
+    39.6795,
+    'Old Town streets are narrow. Tuk-tuks drop off right at the gate.'
+  ),
+  mamaNgina: venue(
+    'mama-ngina',
+    'Mama Ngina Waterfront',
+    'Mombasa Island',
+    MOMBASA,
+    -4.0705,
+    39.677,
+    'Expect crowds along the waterfront on New Year’s Eve. Walk if you can.'
+  ),
+  jomoGround: venue(
+    'jomo-ground',
+    'Jomo Kenyatta Sports Ground',
+    'Kisumu Central',
+    KISUMU,
+    -0.0989,
+    34.7576,
+    'The grounds are a short walk from the CBD. Gates open at 5:00 PM.'
+  ),
+  afraha: venue(
+    'afraha',
+    'Afraha Stadium',
+    'Nakuru East',
+    NAKURU,
+    -0.2826,
+    36.0756,
+    'Matatus to Afraha leave from the main stage every few minutes.'
+  ),
+  kipKeino: venue(
+    'kip-keino',
+    'Kipchoge Keino Stadium',
+    'Town Centre',
+    ELDORET,
+    0.5196,
+    35.2717,
+    'Evenings get cold in Eldoret. Bring a jacket for the walk back.'
+  ),
+} satisfies Record<string, IVenue>;
+
+export const ARTIST = {
+  name: 'Nyota',
+  initials: 'NY',
+  tour: 'Sauti ya Mtaa Tour 2026',
+  genre: 'Afro-pop · Benga',
+  latest: { title: 'Mtaa Wetu', kind: 'Single', date: '12 Sep 2026' },
+  songs: [
+    { title: 'Mtaa Wetu', album: 'Mtaa Wetu · Single', year: '2026' },
+    { title: 'Nairobi Nights', album: 'Jua Kali', year: '2025' },
+    { title: 'Pole Pole', album: 'Jua Kali', year: '2025' },
+    { title: 'Lamu Sunset', album: 'Pwani', year: '2024' },
+  ],
+};
+
+export interface IShow {
+  id: string;
+  venue: IVenue;
+  /** ISO date in East Africa Time. */
+  date: string;
+  time: string;
+}
+
+function show(venueRef: IVenue, date: string, time = '19:30'): IShow {
+  return { id: `${venueRef.id}-${date}`, venue: venueRef, date, time };
+}
+
+export const SHOWS: IShow[] = [
+  show(VENUES.kasarani, '2026-10-29'),
+  show(VENUES.uhuruGardens, '2026-11-06'),
+  show(VENUES.uhuruGardens, '2026-11-07'),
+  show(VENUES.fortJesus, '2026-11-14', '19:00'),
+  show(VENUES.fortJesus, '2026-11-15', '19:00'),
+  show(VENUES.jomoGround, '2026-11-21', '18:30'),
+  show(VENUES.afraha, '2026-11-22', '18:30'),
+  show(VENUES.kipKeino, '2026-11-28', '18:00'),
+  show(VENUES.kasarani, '2026-12-12', '20:00'),
+  show(VENUES.mamaNgina, '2026-12-31', '21:00'),
+];
+
+export interface ITier {
+  id: string;
+  name: string;
+  detail: string;
+  price: number;
+}
+
+export const TIERS: ITier[] = [
+  {
+    id: 'ga',
+    name: 'General Admission',
+    detail: 'Standing room on the floor',
+    price: 2500,
+  },
+  {
+    id: 'reserved',
+    name: 'Reserved Seat',
+    detail: 'In the stands, assigned seat',
+    price: 4000,
+  },
+  {
+    id: 'pit',
+    name: 'Front Pit',
+    detail: 'Closest to the stage',
+    price: 7500,
+  },
+  {
+    id: 'vip',
+    name: 'VIP Package',
+    detail: 'Early entry and a merch bundle',
+    price: 15000,
+  },
+];
+
+export const MAX_TICKETS = 8;
+
+export type TTravelMode = 'ride' | 'drive' | 'walk' | 'matatu';
+
+export const TRAVEL_MODES: {
+  value: TTravelMode;
+  label: string;
+  icon: SFSymbol;
+  speedKmh: number;
+}[] = [
+  { value: 'ride', label: 'Ride', icon: 'car.fill', speedKmh: 26 },
+  { value: 'drive', label: 'Drive', icon: 'steeringwheel', speedKmh: 28 },
+  { value: 'walk', label: 'Walk', icon: 'figure.walk', speedKmh: 4.5 },
+  { value: 'matatu', label: 'Matatu', icon: 'bus.fill', speedKmh: 18 },
+];
+
+export type TRideId = 'boda' | 'tuktuk' | 'go' | 'xl';
+
+export interface IRide {
+  id: TRideId;
+  name: string;
+  description: string;
+  icon: SFSymbol;
+  base: number;
+  perKm: number;
+  minimum: number;
+  pickupMinutes: number;
+}
+
+export const RIDES: IRide[] = [
+  {
+    id: 'boda',
+    name: 'Boda Boda',
+    description: 'Beat the jam. Helmet included.',
+    icon: 'scooter',
+    base: 50,
+    perKm: 28,
+    minimum: 100,
+    pickupMinutes: 2,
+  },
+  {
+    id: 'tuktuk',
+    name: 'Tuk-Tuk',
+    description: 'Up to 3 people.',
+    icon: 'car.side.fill',
+    base: 80,
+    perKm: 38,
+    minimum: 150,
+    pickupMinutes: 4,
+  },
+  {
+    id: 'go',
+    name: 'Car',
+    description: 'Everyday ride, up to 4.',
+    icon: 'car.fill',
+    base: 150,
+    perKm: 45,
+    minimum: 250,
+    pickupMinutes: 3,
+  },
+  {
+    id: 'xl',
+    name: 'Car XL',
+    description: 'Room for the whole squad, up to 6.',
+    icon: 'car.2.fill',
+    base: 250,
+    perKm: 65,
+    minimum: 400,
+    pickupMinutes: 6,
+  },
+];
+
+export interface IDriver {
+  name: string;
+  rating: number;
+  vehicle: string;
+  plate: string;
+}
+
+export const DRIVERS: Record<TRideId, IDriver> = {
+  boda: {
+    name: 'Kevin Otieno',
+    rating: 4.8,
+    vehicle: 'Boxer 150',
+    plate: 'KMFB 214Y',
+  },
+  tuktuk: {
+    name: 'Mwanaisha Said',
+    rating: 4.9,
+    vehicle: 'Bajaj RE',
+    plate: 'KTWA 832K',
+  },
+  go: {
+    name: 'Wanjiku Mwangi',
+    rating: 4.9,
+    vehicle: 'Toyota Axio · Silver',
+    plate: 'KDJ 482T',
+  },
+  xl: {
+    name: 'Kiprop Kiptoo',
+    rating: 4.7,
+    vehicle: 'Toyota Noah · White',
+    plate: 'KDK 109H',
+  },
+};
+
+export type TPaymentId = 'mpesa' | 'airtel';
+
+export const PAYMENT_METHODS: {
+  value: TPaymentId;
+  label: string;
+  icon: SFSymbol;
+}[] = [
+  { value: 'mpesa', label: 'M-Pesa', icon: 'iphone' },
+  { value: 'airtel', label: 'Airtel Money', icon: 'iphone' },
+];
+
+const EARTH_RADIUS_KM = 6371;
+
+function toRadians(degrees: number) {
+  return (degrees * Math.PI) / 180;
+}
+
+export function distanceKm(from: LatLng, to: LatLng): number {
+  const dLat = toRadians(to.latitude - from.latitude);
+  const dLng = toRadians(to.longitude - from.longitude);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRadians(from.latitude)) *
+      Math.cos(toRadians(to.latitude)) *
+      Math.sin(dLng / 2) ** 2;
+  // Roads are never straight, so pad the great-circle distance.
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(a)) * 1.3;
+}
+
+export function travelMinutes(mode: TTravelMode, km: number): number {
+  const speed = TRAVEL_MODES.find((option) => option.value === mode)!.speedKmh;
+  return Math.max(2, Math.round((km / speed) * 60));
+}
+
+export function fareFor(ride: IRide, km: number): number {
+  const raw = Math.max(ride.minimum, ride.base + ride.perKm * km);
+  return Math.ceil(raw / 10) * 10;
+}
+
+/** A gentle arc between two points, so the route reads as a path. */
+export function routeBetween(from: LatLng, to: LatLng, steps = 32): LatLng[] {
+  const dLat = to.latitude - from.latitude;
+  const dLng = to.longitude - from.longitude;
+  const control = {
+    latitude: from.latitude + dLat / 2 - dLng * 0.18,
+    longitude: from.longitude + dLng / 2 + dLat * 0.18,
+  };
+
+  return Array.from({ length: steps + 1 }, (_, index) => {
+    const t = index / steps;
+    const u = 1 - t;
+    return {
+      latitude:
+        u * u * from.latitude +
+        2 * u * t * control.latitude +
+        t * t * to.latitude,
+      longitude:
+        u * u * from.longitude +
+        2 * u * t * control.longitude +
+        t * t * to.longitude,
+    };
+  });
+}
+
+/** The smallest region that shows every point, with some breathing room. */
+export function regionFor(points: LatLng[], minDelta = 0.012): Region {
+  const lats = points.map((point) => point.latitude);
+  const lngs = points.map((point) => point.longitude);
+  const [minLat, maxLat] = [Math.min(...lats), Math.max(...lats)];
+  const [minLng, maxLng] = [Math.min(...lngs), Math.max(...lngs)];
+  return {
+    latitude: (minLat + maxLat) / 2,
+    longitude: (minLng + maxLng) / 2,
+    latitudeDelta: Math.max(minDelta, (maxLat - minLat) * 1.7),
+    longitudeDelta: Math.max(minDelta, (maxLng - minLng) * 1.7),
+  };
+}
+
+const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+export function dateParts(date: string) {
+  const [year, month, day] = date.split('-').map(Number);
+  const weekday = new Date(Date.UTC(year!, month! - 1, day!)).getUTCDay();
+  const monthName = MONTHS[month! - 1]!;
+  return {
+    year: String(year),
+    day: String(day),
+    weekday: DAYS[weekday]!,
+    month: monthName,
+    monthShort: monthName.slice(0, 3),
+  };
+}
+
+export function formatTime(time: string): string {
+  const [hours, minutes] = time.split(':').map(Number);
+  const suffix = hours! >= 12 ? 'PM' : 'AM';
+  return `${hours! % 12 || 12}:${String(minutes).padStart(2, '0')} ${suffix}`;
+}
+
+export function formatLongDate(date: string): string {
+  const { weekday, day, month, year } = dateParts(date);
+  const longDay = {
+    SUN: 'Sunday',
+    MON: 'Monday',
+    TUE: 'Tuesday',
+    WED: 'Wednesday',
+    THU: 'Thursday',
+    FRI: 'Friday',
+    SAT: 'Saturday',
+  }[weekday];
+  return `${longDay}, ${day} ${month} ${year}`;
+}
+
+export function groupByMonth(shows: IShow[]) {
+  const groups: { month: string; shows: IShow[] }[] = [];
+  for (const item of shows) {
+    const { month } = dateParts(item.date);
+    const group = groups.find((existing) => existing.month === month);
+    if (group) group.shows.push(item);
+    else groups.push({ month, shows: [item] });
+  }
+  return groups;
+}
+
+export function formatKES(amount: number): string {
+  const whole = Math.round(amount)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `KSh ${whole}`;
+}
+
+export function formatKm(km: number): string {
+  return km < 10 ? `${km.toFixed(1)} km` : `${Math.round(km)} km`;
+}
+
+const KENYAN_MOBILE = /^(?:\+?254|0)?([71]\d{8})$/;
+
+/** Returns the number as 2547XXXXXXXX / 2541XXXXXXXX, or null if invalid. */
+export function normalizeKenyanPhone(input: string): string | null {
+  const match = input.replace(/[\s-]/g, '').match(KENYAN_MOBILE);
+  return match ? `254${match[1]}` : null;
+}
+
+export function formatKenyanPhone(normalized: string): string {
+  const local = `0${normalized.slice(3)}`;
+  return `${local.slice(0, 4)} ${local.slice(4, 7)} ${local.slice(7)}`;
+}
+
+// Approximate M-Pesa send-money tariff bands (upper limit, cost) in KES.
+const SEND_MONEY_COSTS: [number, number][] = [
+  [100, 0],
+  [500, 7],
+  [1000, 13],
+  [1500, 23],
+  [2500, 33],
+  [3500, 53],
+  [5000, 57],
+  [7500, 78],
+  [10000, 90],
+  [15000, 100],
+  [20000, 105],
+];
+
+export function sendMoneyCost(amount: number): number {
+  return SEND_MONEY_COSTS.find(([limit]) => amount <= limit)?.[1] ?? 108;
+}

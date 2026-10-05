@@ -14,10 +14,10 @@ interface IExample {
 
 const EXAMPLES: IExample[] = [
   {
-    title: 'Safiri',
-    subtitle: 'Kenyan ride-hailing map with M-Pesa checkout.',
-    icon: 'map.fill',
-    href: '/safiri',
+    title: 'Tikiti',
+    subtitle: 'Concert tickets, directions and rides, paid with M-Pesa.',
+    icon: 'ticket.fill',
+    href: '/tikiti',
   },
   {
     title: 'Playground',
@@ -52,7 +52,7 @@ export default function HomeScreen() {
     >
       <Text style={styles.title}>Morphlet Kenya</Text>
       <Text style={styles.subtitle}>
-        A floating tray that morphs, from Nairobi to Mombasa.
+        A floating tray that morphs, from Kasarani to Fort Jesus.
       </Text>
 
       <View style={styles.list}>
