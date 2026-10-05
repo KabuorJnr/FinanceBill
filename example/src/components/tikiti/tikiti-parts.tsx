@@ -1,5 +1,6 @@
 import { type ComponentRef, type ReactNode, type Ref } from 'react';
 import {
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -10,9 +11,14 @@ import {
 import { Tray, useTray } from 'morphlet';
 
 import { sfFont } from '../../utils';
-import { TrayCloseButton, TrayIconButton } from '../artist/artist-tray-parts';
 import { SymbolView, type SFSymbol } from '../symbol-view';
 import { PinMap } from './pin-map';
+import {
+  categoryOf,
+  displayName,
+  initialsOf,
+  type IEvent,
+} from './events.data';
 import { dateParts, type IVenue } from './tikiti.data';
 import { tikitiColors } from './tikiti.theme';
 
@@ -21,7 +27,11 @@ export const tikitiType = {
   headline: { fontSize: 17, ...sfFont('600'), color: tikitiColors.text },
   body: { fontSize: 16, ...sfFont(), color: tikitiColors.text },
   caption: { fontSize: 13, ...sfFont(), color: tikitiColors.textSecondary },
-  eyebrow: { fontSize: 12, ...sfFont('700'), color: tikitiColors.accent },
+  eyebrow: {
+    fontSize: 12,
+    ...sfFont('700'),
+    color: tikitiColors.accentBright,
+  },
   section: {
     fontSize: 14,
     ...sfFont('600'),
@@ -32,7 +42,41 @@ export const tikitiType = {
 
 interface IHeaderView {
   title: string;
+  subtitle?: string;
   back?: boolean;
+}
+
+/** The reference's solid round header buttons. */
+export function CircleButton({
+  icon,
+  label,
+  onPress,
+  ref,
+  ...rest
+}: {
+  icon: SFSymbol;
+  label: string;
+  onPress?: () => void;
+  ref?: Ref<ComponentRef<typeof Pressable>>;
+}) {
+  return (
+    <Pressable
+      ref={ref}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      hitSlop={8}
+      onPress={onPress}
+      {...rest}
+      style={({ pressed }) => [styles.circle, pressed && styles.pressed]}
+    >
+      <SymbolView
+        name={icon}
+        size={13}
+        weight="bold"
+        tintColor={tikitiColors.text}
+      />
+    </Pressable>
+  );
 }
 
 export function TikitiHeader({
@@ -49,14 +93,23 @@ export function TikitiHeader({
       <Tray.Morph value={view ?? ''} style={styles.heading}>
         <View style={styles.headingRow}>
           {showBack && (
-            <TrayIconButton icon="chevron.left" label="Back" onPress={goBack} />
+            <CircleButton icon="chevron.left" label="Back" onPress={goBack} />
           )}
-          <Tray.Title style={tikitiType.title} numberOfLines={1}>
-            {current.title}
-          </Tray.Title>
+          <View style={styles.headingText}>
+            <Tray.Title style={tikitiType.title} numberOfLines={1}>
+              {current.title}
+            </Tray.Title>
+            {!!current.subtitle && (
+              <Text style={tikitiType.caption} numberOfLines={1}>
+                {current.subtitle}
+              </Text>
+            )}
+          </View>
         </View>
       </Tray.Morph>
-      <TrayCloseButton />
+      <Tray.Close asChild>
+        <CircleButton icon="xmark" label="Close" />
+      </Tray.Close>
     </Tray.Header>
   );
 }
@@ -89,7 +142,7 @@ export function TikitiButton({
       style={({ pressed }) => [
         styles.button,
         isAccent ? styles.buttonAccent : styles.buttonSecondary,
-        disabled && styles.disabled,
+        disabled && styles.buttonDisabled,
         pressed && styles.pressed,
       ]}
     >
@@ -98,10 +151,12 @@ export function TikitiButton({
           name={icon}
           size={15}
           weight="semibold"
-          tintColor={tikitiColors.text}
+          tintColor={disabled ? tikitiColors.textSecondary : tikitiColors.text}
         />
       )}
-      <Text style={tikitiType.headline}>{label}</Text>
+      <Text style={[tikitiType.headline, disabled && styles.textDisabled]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -118,6 +173,8 @@ interface IListRowProps {
   selected?: boolean;
   divider?: boolean;
   chevron?: boolean;
+  /** Greyed title, e.g. a placeholder value. */
+  muted?: boolean;
   onPress?: () => void;
 }
 
@@ -129,6 +186,7 @@ export function ListRow({
   selected,
   divider,
   chevron,
+  muted,
   onPress,
 }: IListRowProps) {
   return (
@@ -145,7 +203,10 @@ export function ListRow({
     >
       {leading}
       <View style={styles.rowText}>
-        <Text style={tikitiType.headline} numberOfLines={1}>
+        <Text
+          style={[tikitiType.headline, muted && styles.mutedTitle]}
+          numberOfLines={1}
+        >
           {title}
         </Text>
         {!!subtitle && (
@@ -188,6 +249,17 @@ export function DateBlock({ date }: { date: string }) {
     <View style={styles.date}>
       <Text style={styles.dateWeekday}>{weekday}</Text>
       <Text style={styles.dateDay}>{day}</Text>
+    </View>
+  );
+}
+
+/** Month and day in a rounded tile, as on the reference's concert card. */
+export function DateTile({ date }: { date: string }) {
+  const { monthShort, day } = dateParts(date);
+  return (
+    <View style={styles.tile}>
+      <Text style={styles.tileMonth}>{monthShort.toUpperCase()}</Text>
+      <Text style={styles.tileDay}>{day}</Text>
     </View>
   );
 }
@@ -328,6 +400,31 @@ export function KenyaBand({ height = 14 }: { height?: number }) {
   );
 }
 
+export function ArtistAvatar({
+  size,
+  event,
+  label,
+}: {
+  size: number;
+  event?: IEvent;
+  label?: string;
+}) {
+  const text = label ?? (event ? displayName(event) : '');
+  return (
+    <View
+      style={[
+        styles.artistAvatar,
+        { width: size, height: size, borderRadius: size / 4 },
+        event && { backgroundColor: categoryOf(event.category).color },
+      ]}
+    >
+      <Text style={[tikitiType.headline, { fontSize: size * 0.34 }]}>
+        {initialsOf(text)}
+      </Text>
+    </View>
+  );
+}
+
 export function NumberPlate({ plate }: { plate: string }) {
   return (
     <View style={styles.plate}>
@@ -354,6 +451,18 @@ const styles = StyleSheet.create({
     gap: 12,
     minHeight: 34,
   },
+  headingText: {
+    flex: 1,
+    gap: 1,
+  },
+  circle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tikitiColors.control,
+  },
   button: {
     flex: 1,
     flexDirection: 'row',
@@ -372,6 +481,16 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.4,
+  },
+  buttonDisabled: {
+    backgroundColor: tikitiColors.disabled,
+  },
+  textDisabled: {
+    color: tikitiColors.textSecondary,
+  },
+  mutedTitle: {
+    ...sfFont(),
+    color: tikitiColors.textSecondary,
   },
   pressed: {
     opacity: 0.75,
@@ -415,17 +534,36 @@ const styles = StyleSheet.create({
     borderColor: tikitiColors.textTertiary,
   },
   radioOn: {
-    borderColor: tikitiColors.accent,
-    backgroundColor: tikitiColors.accent,
+    borderColor: tikitiColors.accentBright,
+    backgroundColor: tikitiColors.accentBright,
   },
   date: {
     width: 36,
     alignItems: 'center',
   },
+  tile: {
+    width: 46,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    borderCurve: 'continuous',
+    backgroundColor: tikitiColors.control,
+  },
+  tileMonth: {
+    fontSize: 11,
+    ...sfFont('700'),
+    color: tikitiColors.accentBright,
+  },
+  tileDay: {
+    fontSize: 21,
+    ...sfFont('700'),
+    color: tikitiColors.text,
+  },
   dateWeekday: {
     fontSize: 10,
     ...sfFont('700'),
-    color: tikitiColors.accent,
+    color: tikitiColors.accentBright,
   },
   dateDay: {
     fontSize: 20,
@@ -435,18 +573,15 @@ const styles = StyleSheet.create({
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    padding: 4,
-    borderRadius: 20,
-    backgroundColor: tikitiColors.card,
+    gap: 10,
   },
   step: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: tikitiColors.cardPressed,
+    backgroundColor: tikitiColors.control,
   },
   stepValue: {
     minWidth: 24,
@@ -466,6 +601,8 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     paddingVertical: 13,
+    // Browsers draw a focus box around inputs; the row already shows focus.
+    ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : {}),
   },
   band: {
     flex: 2,
@@ -481,6 +618,11 @@ const styles = StyleSheet.create({
   },
   edge: {
     backgroundColor: tikitiColors.text,
+  },
+  artistAvatar: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tikitiColors.kenyaRed,
   },
   // Kenyan rear number plates are yellow with black characters.
   plate: {

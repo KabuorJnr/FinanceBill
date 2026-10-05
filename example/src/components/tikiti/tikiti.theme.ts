@@ -1,16 +1,22 @@
 import type { MapStyleElement } from 'react-native-maps';
 
+// Colours measured from the reference recording (iOS dark trays with a
+// raspberry accent), plus the Kenyan flag for brand moments.
 export const tikitiColors = {
-  background: '#0B0B0C',
-  sheet: '#1C1C1E',
+  background: '#0A0A0A',
+  sheet: '#18181B',
   text: '#FFFFFF',
-  textSecondary: 'rgba(255, 255, 255, 0.62)',
-  textTertiary: 'rgba(255, 255, 255, 0.4)',
-  card: 'rgba(255, 255, 255, 0.07)',
-  cardPressed: 'rgba(255, 255, 255, 0.13)',
-  separator: 'rgba(255, 255, 255, 0.09)',
-  accent: '#D21034',
-  accentTint: 'rgba(210, 16, 52, 0.22)',
+  textSecondary: 'rgba(235, 235, 245, 0.6)',
+  textTertiary: 'rgba(235, 235, 245, 0.3)',
+  card: '#2D2D30',
+  cardPressed: '#38383C',
+  control: '#3A3A3D',
+  separator: 'rgba(255, 255, 255, 0.08)',
+  accent: '#D1225A',
+  accentBright: '#F04A80',
+  accentRing: 'rgba(240, 74, 128, 0.32)',
+  accentTint: '#472735',
+  disabled: '#2D2D30',
   // Kenyan flag.
   kenyaBlack: '#0A0A0A',
   kenyaRed: '#BB0000',
@@ -18,6 +24,11 @@ export const tikitiColors = {
   mpesa: '#2FA84F',
   airtel: '#E2231A',
   plate: '#FFD200',
+  // Apple Music–style artist page, in solid tones.
+  page: '#2A1517',
+  pageCard: '#3A2023',
+  pageButton: 'rgba(255, 255, 255, 0.16)',
+  glass: 'rgba(28, 28, 30, 0.96)',
 } as const;
 
 export const TIKITI_TRAY_CONTENT = {
@@ -25,34 +36,44 @@ export const TIKITI_TRAY_CONTENT = {
   cornerRadius: 40,
 } as const;
 
-// Google Maps on Android ignores userInterfaceStyle, so give it a dark style.
+// Google Maps (Android) styled after the reference's teal Apple Maps look.
 export const DARK_MAP_STYLE: MapStyleElement[] = [
-  { elementType: 'geometry', stylers: [{ color: '#1d2c2a' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] },
+  { elementType: 'geometry', stylers: [{ color: '#1E6157' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#E2EEF2' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#1E6157' }] },
   {
     featureType: 'road',
     elementType: 'geometry',
-    stylers: [{ color: '#304a7d' }],
+    stylers: [{ color: '#7D9AAE' }],
   },
   {
     featureType: 'road.highway',
     elementType: 'geometry',
-    stylers: [{ color: '#2c6675' }],
+    stylers: [{ color: '#B7C9D6' }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#DCE6EC' }],
   },
   {
     featureType: 'water',
     elementType: 'geometry',
-    stylers: [{ color: '#0e1626' }],
+    stylers: [{ color: '#0B4A55' }],
   },
   {
     featureType: 'poi.park',
     elementType: 'geometry',
-    stylers: [{ color: '#023e3a' }],
+    stylers: [{ color: '#2A7A5E' }],
+  },
+  {
+    featureType: 'landscape.man_made',
+    elementType: 'geometry',
+    stylers: [{ color: '#25695E' }],
   },
   {
     featureType: 'poi',
-    elementType: 'labels',
+    elementType: 'labels.icon',
     stylers: [{ visibility: 'off' }],
   },
 ];

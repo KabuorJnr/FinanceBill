@@ -75,18 +75,20 @@ export function PinMap({ pins, origin, height = 150 }: IPinMapProps) {
             tracksViewChanges={tracksViewChanges}
             zIndex={pins.length - index}
           >
-            <View
-              style={[
-                styles.pin,
-                { backgroundColor: pin.color ?? tikitiColors.accent },
-              ]}
-            >
-              <SymbolView
-                name={pin.icon}
-                size={13}
-                weight="semibold"
-                tintColor={tikitiColors.text}
-              />
+            <View style={styles.halo}>
+              <View
+                style={[
+                  styles.pin,
+                  { backgroundColor: pin.color ?? tikitiColors.accent },
+                ]}
+              >
+                <SymbolView
+                  name={pin.icon}
+                  size={13}
+                  weight="semibold"
+                  tintColor={tikitiColors.text}
+                />
+              </View>
             </View>
           </Marker>
         ))}
@@ -109,6 +111,15 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: tikitiColors.text,
     backgroundColor: '#0A84FF',
+  },
+  // The reference shows a soft ring around the venue pin.
+  halo: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
   },
   pin: {
     width: 30,

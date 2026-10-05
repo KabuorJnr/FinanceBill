@@ -24,6 +24,7 @@ import {
 } from './tikiti.data';
 import { displayName, type IEvent, type ITier } from './events.data';
 import {
+  ArtistAvatar,
   Field,
   Group,
   TikitiButton,
@@ -97,7 +98,11 @@ export function CheckoutTray({
       >
         <TikitiHeader
           views={{
-            form: { title: 'Checkout', back: false },
+            form: {
+              title: 'Checkout',
+              subtitle: 'Demo only. Nothing is charged.',
+              back: false,
+            },
             paying: { title: 'Check Your Phone', back: false },
             done: { title: '', back: false },
           }}
@@ -139,14 +144,7 @@ function Summary({ order }: { order: IOrder }) {
   const { monthShort, day } = dateParts(order.show.date);
   return (
     <View style={styles.summary}>
-      <View style={styles.summaryIcon}>
-        <SymbolView
-          name="ticket.fill"
-          size={18}
-          weight="semibold"
-          tintColor={tikitiColors.text}
-        />
-      </View>
+      <ArtistAvatar size={40} event={order.show} />
       <View style={styles.grow}>
         <Text style={tikitiType.headline}>{order.tier.name}</Text>
         <Text style={tikitiType.caption}>
@@ -180,7 +178,6 @@ function FormView({ order, buyer, onChange }: IFormViewProps) {
 
   return (
     <View style={styles.page}>
-      <Text style={tikitiType.caption}>Demo only. Nothing is charged.</Text>
       <Summary order={order} />
 
       <Text style={tikitiType.section}>Send Tickets To</Text>
@@ -326,7 +323,7 @@ function DoneView({
         />
       </View>
       <Tray.Title style={[tikitiType.title, styles.doneTitle]}>
-        Uko Ndani! You’re Going
+        You’re Going
       </Tray.Title>
       <Tray.Description style={[tikitiType.caption, styles.centerText]}>
         {displayName(order.show)} at {order.show.venue.name}, {month} {day}.
@@ -335,14 +332,21 @@ function DoneView({
         {order.tier.name}, sent to{' '}
         {order.phone ? formatKenyanPhone(order.phone) : 'your phone'} by SMS.
       </Tray.Description>
-      <Tray.Close asChild>
-        <TikitiButton label="Done" />
-      </Tray.Close>
+      <View style={styles.fullWidth}>
+        <Tray.Close asChild>
+          <TikitiButton label="Done" />
+        </Tray.Close>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  fullWidth: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    marginTop: 6,
+  },
   page: {
     gap: 12,
     paddingHorizontal: 20,
@@ -366,10 +370,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    padding: 12,
-    borderRadius: 18,
-    borderCurve: 'continuous',
-    backgroundColor: tikitiColors.card,
+    paddingVertical: 4,
   },
   summaryIcon: {
     width: 40,
@@ -398,15 +399,16 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 3,
   },
+  // A bright disc with a soft ring around it, as in the reference.
   check: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 6,
-    borderColor: tikitiColors.accentTint,
-    backgroundColor: tikitiColors.accent,
+    borderWidth: 8,
+    borderColor: tikitiColors.accentRing,
+    backgroundColor: tikitiColors.accentBright,
   },
   doneTitle: {
     fontSize: 24,

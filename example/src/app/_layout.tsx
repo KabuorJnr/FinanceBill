@@ -1,3 +1,4 @@
+import { AbrilFatface_400Regular } from '@expo-google-fonts/abril-fatface';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -9,6 +10,8 @@ const FONT_SOURCES = {
   [fonts.regular]: require('../../assets/fonts/rounded-regular.otf'),
   [fonts.medium]: require('../../assets/fonts/rounded-medium.otf'),
   [fonts.bold]: require('../../assets/fonts/rounded-bold.otf'),
+  // Display face for artist names, close to the reference's wordmark.
+  AbrilFatface_400Regular,
 };
 
 export default function RootLayout() {

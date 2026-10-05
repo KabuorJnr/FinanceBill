@@ -24,7 +24,6 @@ import { hotelsNear, type IHotel } from './hotels.data';
 import {
   categoryOf,
   displayName,
-  initialsOf,
   type IEvent,
   type ITier,
 } from './events.data';
@@ -42,6 +41,7 @@ import {
   formatPrice,
   formatTime,
   groupByMonth,
+  todayInKenya,
   travelMinutes,
   type IRide,
   type IVenue,
@@ -50,12 +50,14 @@ import {
 } from './tikiti.data';
 import {
   DateBlock,
+  DateTile,
   Group,
   ListRow,
   NumberPlate,
   Radio,
   Stepper,
   TikitiButton,
+  ArtistAvatar,
   TikitiHeader,
   VenueMap,
   tikitiType,
@@ -107,12 +109,15 @@ interface IEventTrayProps {
   /** One event opens straight to it; several open a list first. */
   events: IEvent[];
   listTitle?: string;
+  /** Stack over another tray, e.g. from search results. */
+  stack?: boolean;
   children: ReactElement;
 }
 
 export function EventTray({
   events,
   listTitle = 'Upcoming Events',
+  stack = false,
   children,
 }: IEventTrayProps) {
   const [draft, setDraft] = useState<IDraft>(() => newDraft(events[0]!));
@@ -136,7 +141,7 @@ export function EventTray({
         {children}
       </Tray.Trigger>
 
-      <Tray.Content {...TIKITI_TRAY_CONTENT}>
+      <Tray.Content stack={stack} {...TIKITI_TRAY_CONTENT}>
         <TikitiHeader
           views={{
             shows: { title: listTitle },
@@ -230,6 +235,7 @@ function ShowsView({
   const { setView } = useTray();
   // A tour lists venues; a mixed list names each event.
   const isTour = events.every((event) => event.tourId === events[0]!.tourId);
+  const thisYear = todayInKenya().slice(0, 4);
 
   return (
     <ScrollView
@@ -240,10 +246,18 @@ function ShowsView({
       {groupByMonth(events).map((group) => (
         <View key={group.month} style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={tikitiType.title}>{group.month}</Text>
+            <Text style={tikitiType.title}>
+              {group.month.replace(` ${thisYear}`, '')}
+            </Text>
             <Text style={tikitiType.caption}>
               {group.items.length}{' '}
-              {group.items.length === 1 ? 'event' : 'events'}
+              {isTour
+                ? group.items.length === 1
+                  ? 'show'
+                  : 'shows'
+                : group.items.length === 1
+                  ? 'event'
+                  : 'events'}
             </Text>
           </View>
           <Group>
@@ -255,7 +269,7 @@ function ShowsView({
                 title={isTour && item.tourId ? item.venue.name : item.title}
                 subtitle={
                   isTour && item.tourId
-                    ? `${item.venue.area}, ${item.venue.city.name} · ${formatTime(item.time)}`
+                    ? `${item.venue.area}, Kenya · ${formatTime(item.time)}`
                     : `${item.venue.name}, ${item.venue.city.name} · ${formatTime(item.time)}`
                 }
                 chevron
@@ -298,20 +312,31 @@ function ConcertView({ show }: { show: IEvent }) {
 
   return (
     <View style={styles.page}>
-      <VenueMap venue={venue} />
-      <Group>
-        <ListRow
-          leading={<DateBlock date={show.date} />}
-          title={venue.name}
-          subtitle={`${venue.area}, ${venue.city.name}, Kenya`}
-        />
-      </Group>
+      <VenueMap venue={venue} height={160} />
+      <View style={styles.venue}>
+        <DateTile date={show.date} />
+        <View style={styles.grow}>
+          <Text style={tikitiType.headline} numberOfLines={1}>
+            {venue.name}
+          </Text>
+          <Text style={tikitiType.caption} numberOfLines={1}>
+            {venue.area}, {venue.city.name}, Kenya
+          </Text>
+        </View>
+      </View>
       <Group>
         <Fact label="Date" value={formatLongDate(show.date)} />
         <Fact label="Time" value={formatTime(show.time)} divider />
-        <Fact label="Organiser" value={show.organizer.name} divider />
+        <Fact
+          label="Address"
+          value={`${venue.area}, ${venue.city.name}`}
+          divider
+        />
+        {!show.tourId && (
+          <Fact label="Organiser" value={show.organizer.name} divider />
+        )}
       </Group>
-      {!!show.description && (
+      {!show.tourId && !!show.description && (
         <Text style={tikitiType.caption} numberOfLines={3}>
           {show.description}
         </Text>
@@ -335,7 +360,7 @@ function ConcertView({ show }: { show: IEvent }) {
       <View style={styles.buttons}>
         <TikitiButton
           label="Directions"
-          icon="arrow.triangle.turn.up.right.diamond.fill"
+          icon="map.fill"
           variant="secondary"
           onPress={() => setView('directions')}
         />
@@ -366,35 +391,44 @@ function DirectionsView({ venue, mode, onModeChange }: IDirectionsViewProps) {
       <VenueMap venue={venue} showRoute />
       <Group>
         <ListRow
-          leading={<RouteIcon icon="location.fill" color="#0A84FF" />}
+          muted
+          leading={
+            <RouteIcon
+              icon="location.fill"
+              color={tikitiColors.textSecondary}
+            />
+          }
           title="Current Location"
-          subtitle={venue.city.origin.name}
         />
         <ListRow
           divider
           leading={
-            <RouteIcon icon="mappin.and.ellipse" color={tikitiColors.accent} />
+            <RouteIcon
+              icon="mappin.and.ellipse"
+              color={tikitiColors.accentBright}
+            />
           }
           title={venue.name}
-          subtitle={`${venue.area}, ${venue.city.name}`}
         />
       </Group>
 
       <AnimatedTabs tabs={TRAVEL_MODES} value={mode} onChange={onModeChange} />
 
       <Tray.Morph value={mode} transition="slide">
-        <View style={styles.tip}>
-          <Text style={tikitiType.headline}>
-            {formatKm(km)} · about {minutes} min
-            {mode === 'ride' ? ' by car' : ` by ${label.toLowerCase()}`}
-          </Text>
-          <Text style={tikitiType.caption}>{venue.tip}</Text>
-        </View>
+        <Text style={[tikitiType.body, styles.tip]}>
+          {formatKm(km)}, about {minutes} min
+          {mode === 'ride' ? ' by car' : ` by ${label.toLowerCase()}`}.{' '}
+          {venue.tip}
+        </Text>
       </Tray.Morph>
 
       <TikitiButton
         label={mode === 'ride' ? 'Choose a Ride' : 'Start in Maps'}
-        icon={mode === 'ride' ? 'car.fill' : 'location.fill'}
+        icon={
+          mode === 'ride'
+            ? 'car.fill'
+            : 'arrow.triangle.turn.up.right.diamond.fill'
+        }
         onPress={() =>
           mode === 'ride' ? setView('rides') : startInMaps(venue, mode)
         }
@@ -567,7 +601,15 @@ function TicketsView({
             title={option.name}
             subtitle={option.detail}
             trailing={
-              <Text style={tikitiType.body}>{formatPrice(option.price)}</Text>
+              <Text
+                style={
+                  option.id === tier.id
+                    ? tikitiType.headline
+                    : [tikitiType.body, styles.priceIdle]
+                }
+              >
+                {formatPrice(option.price)}
+              </Text>
             }
             onPress={() => onTierChange(option.id)}
           />
@@ -639,31 +681,6 @@ function TicketsView({
   );
 }
 
-export function ArtistAvatar({
-  size,
-  event,
-  label,
-}: {
-  size: number;
-  event?: IEvent;
-  label?: string;
-}) {
-  const text = label ?? (event ? displayName(event) : '');
-  return (
-    <View
-      style={[
-        styles.artistAvatar,
-        { width: size, height: size, borderRadius: size / 4 },
-        event && { backgroundColor: categoryOf(event.category).color },
-      ]}
-    >
-      <Text style={[tikitiType.headline, { fontSize: size * 0.34 }]}>
-        {initialsOf(text)}
-      </Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   page: {
     gap: 14,
@@ -708,8 +725,21 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   tip: {
-    gap: 4,
     paddingHorizontal: 2,
+    lineHeight: 22,
+    color: tikitiColors.textSecondary,
+  },
+  priceIdle: {
+    color: tikitiColors.textSecondary,
+  },
+  venue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: 12,
+    borderRadius: 18,
+    borderCurve: 'continuous',
+    backgroundColor: tikitiColors.card,
   },
   routeIcon: {
     width: 28,
@@ -740,11 +770,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-  },
-  artistAvatar: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: tikitiColors.kenyaRed,
   },
   quantity: {
     flexDirection: 'row',

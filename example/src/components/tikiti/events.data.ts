@@ -153,6 +153,7 @@ export const NYOTA_TOUR = {
   artist: 'Nyota',
   title: 'Sauti ya Mtaa Tour 2026',
   genre: 'Afro-pop · Benga',
+  bio: 'Nyota grew up between Kibera and Kisumu, mixing benga guitar with Afro-pop and Sheng hooks. The Sauti ya Mtaa tour takes the new songs to five cities.',
   latest: { title: 'Mtaa Wetu', kind: 'Single', date: '12 Sep 2026' },
   songs: [
     { title: 'Mtaa Wetu', album: 'Mtaa Wetu · Single', year: '2026' },

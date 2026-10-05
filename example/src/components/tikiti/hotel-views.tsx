@@ -391,14 +391,21 @@ export function StayView({
         total, paid at the hotel with M-Pesa or card. Demo only, no booking is
         made.
       </Tray.Description>
-      <Tray.Close asChild>
-        <TikitiButton label="Done" />
-      </Tray.Close>
+      <View style={styles.fullWidth}>
+        <Tray.Close asChild>
+          <TikitiButton label="Done" />
+        </Tray.Close>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  fullWidth: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
+    marginTop: 6,
+  },
   page: {
     gap: 14,
     paddingHorizontal: 20,

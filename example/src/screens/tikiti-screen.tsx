@@ -21,6 +21,8 @@ import {
   KenyaBand,
   NYOTA_TOUR,
   OrganizerTray,
+  TAB_BAR_CLEARANCE,
+  TabBar,
   categoryOf,
   dateParts,
   formatPrice,
@@ -59,7 +61,10 @@ export default function TikitiScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 110 },
+          {
+            paddingTop: insets.top + 8,
+            paddingBottom: insets.bottom + TAB_BAR_CLEARANCE + 16,
+          },
         ]}
       >
         <View style={styles.header}>
@@ -144,14 +149,7 @@ export default function TikitiScreen() {
         </Text>
       </ScrollView>
 
-      <View
-        pointerEvents="box-none"
-        style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 16) }]}
-      >
-        <OrganizerTray>
-          <PostBar signedIn={!!organizer} />
-        </OrganizerTray>
-      </View>
+      <TabBar active="home" />
     </View>
   );
 }
@@ -278,36 +276,6 @@ function StayCard(props: IPressableRefProps) {
         weight="semibold"
         tintColor={tikitiColors.textTertiary}
       />
-    </Pressable>
-  );
-}
-
-function PostBar({
-  signedIn,
-  ...rest
-}: IPressableRefProps & { signedIn: boolean }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      {...rest}
-      style={({ pressed }) => [styles.post, pressed && styles.pressed]}
-    >
-      <SymbolView
-        name="plus"
-        size={16}
-        weight="bold"
-        tintColor={tikitiColors.text}
-      />
-      <View style={styles.grow}>
-        <Text style={tikitiType.headline}>
-          {signedIn ? 'Post or Manage Events' : 'Organising an Event?'}
-        </Text>
-        <Text style={styles.postCaption}>
-          {signedIn
-            ? 'Publish and sell tickets with M-Pesa'
-            : 'Create an organiser account and post it'}
-        </Text>
-      </View>
     </Pressable>
   );
 }
@@ -456,27 +424,5 @@ const styles = StyleSheet.create({
   footnote: {
     textAlign: 'center',
     marginTop: 6,
-  },
-  bar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: GUTTER,
-    paddingTop: 12,
-  },
-  post: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    height: 64,
-    paddingHorizontal: 22,
-    borderRadius: 32,
-    borderCurve: 'continuous',
-    backgroundColor: tikitiColors.accent,
-  },
-  postCaption: {
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.85)',
   },
 });

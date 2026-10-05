@@ -1,4 +1,5 @@
-export { ArtistAvatar, EventTray } from './event-tray';
+export { Artwork } from './artwork';
+export { EventTray } from './event-tray';
 export {
   CATEGORIES,
   NYOTA_TOUR,
@@ -11,7 +12,10 @@ export {
 export { EventsProvider, useEvents } from './events.store';
 export { HOTELS, REGIONS } from './hotels.data';
 export { HotelsTray } from './hotels-tray';
+export { MiniPlayer } from './mini-player';
 export { OrganizerTray } from './organizer-tray';
+export { SearchTray } from './search-tray';
+export { TAB_BAR_CLEARANCE, TabBar, type TTab } from './tab-bar';
 export {
   CITIES,
   dateParts,
@@ -20,5 +24,10 @@ export {
   formatTime,
   sendMoneyCost,
 } from './tikiti.data';
-export { KenyaBand, tikitiType } from './tikiti-parts';
-export { tikitiColors } from './tikiti.theme';
+export {
+  ArtistAvatar,
+  KenyaBand,
+  TikitiHeader,
+  tikitiType,
+} from './tikiti-parts';
+export { TIKITI_TRAY_CONTENT, tikitiColors } from './tikiti.theme';

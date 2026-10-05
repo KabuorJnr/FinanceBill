@@ -1,7 +1,13 @@
-import { useCallback, type ComponentRef, type Ref } from 'react';
+import {
+  useState,
+  type ComponentRef,
+  type ReactElement,
+  type Ref,
+} from 'react';
 import {
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -11,16 +17,19 @@ import {
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Tray } from 'morphlet';
 
-import { SymbolView } from '../components/symbol-view';
+import { SymbolView, type SFSymbol } from '../components/symbol-view';
 import {
-  ArtistAvatar,
+  Artwork,
   EventTray,
-  HOTELS,
-  HotelsTray,
   KenyaBand,
+  MiniPlayer,
   NYOTA_TOUR,
-  REGIONS,
+  TAB_BAR_CLEARANCE,
+  TabBar,
+  TikitiHeader,
+  TIKITI_TRAY_CONTENT,
   formatPrice,
   lowestPrice,
   tikitiColors,
@@ -28,7 +37,8 @@ import {
   useEvents,
 } from '../components/tikiti';
 
-const HERO_SHARE = 0.56;
+const HERO_SHARE = 0.42;
+const COLLAPSED_SONGS = 3;
 
 interface IPressableRefProps extends Omit<PressableProps, 'style'> {
   ref?: Ref<ComponentRef<typeof Pressable>>;
@@ -36,17 +46,35 @@ interface IPressableRefProps extends Omit<PressableProps, 'style'> {
 
 export default function ArtistScreen() {
   const { events } = useEvents();
-  const shows = events.filter((event) => event.tourId === NYOTA_TOUR.id);
-  const cities = [...new Set(shows.map((show) => show.venue.city.name))];
-  const fromPrice = Math.min(...shows.map(lowestPrice));
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
-  const goBack = useCallback(() => {
+  const shows = events.filter((event) => event.tourId === NYOTA_TOUR.id);
+  const [songIndex, setSongIndex] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [following, setFollowing] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [allSongs, setAllSongs] = useState(false);
+
+  const songs = NYOTA_TOUR.songs;
+  const song = songs[songIndex % songs.length]!;
+  const heroHeight = Math.round(height * HERO_SHARE);
+
+  const goBack = () => {
     if (router.canGoBack()) router.back();
     else router.replace('/');
-  }, [router]);
+  };
+
+  const shareTour = () =>
+    Share.share({
+      message: `${NYOTA_TOUR.artist}: ${NYOTA_TOUR.title}. ${shows.length} shows across Kenya, tickets on Tikiti.`,
+    }).catch(() => undefined);
+
+  const play = (index: number) => {
+    setSongIndex(index);
+    setPlaying(true);
+  };
 
   return (
     <View style={styles.screen}>
@@ -54,99 +82,192 @@ export default function ArtistScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + TAB_BAR_CLEARANCE + 72,
+        }}
       >
-        <View
-          style={[styles.hero, { height: Math.round(height * HERO_SHARE) }]}
-        >
-          <View style={styles.heroContent}>
-            <EventTray events={shows} listTitle="Upcoming Concerts">
-              <UpcomingPill />
-            </EventTray>
-            <Text style={styles.name}>{NYOTA_TOUR.artist.toUpperCase()}</Text>
-            <Text style={tikitiType.caption}>
-              {NYOTA_TOUR.genre} · {NYOTA_TOUR.title}
-            </Text>
+        <Artwork
+          seed="nyota-hero"
+          hero
+          width={width}
+          height={heroHeight}
+          radius={0}
+        />
+        <KenyaBand height={14} />
+
+        <View style={styles.headline}>
+          <EventTray events={shows} listTitle="">
+            <UpcomingPill />
+          </EventTray>
+          <Text style={styles.name} numberOfLines={1} adjustsFontSizeToFit>
+            {NYOTA_TOUR.artist.toUpperCase()}
+          </Text>
+          <View style={styles.actions}>
+            <InfoTray showCount={shows.length}>
+              <RoundIcon icon="info" label="About" />
+            </InfoTray>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={playing ? 'Pause' : 'Play'}
+              onPress={() => setPlaying((current) => !current)}
+              style={({ pressed }) => [styles.play, pressed && styles.pressed]}
+            >
+              <SymbolView
+                name={playing ? 'pause.fill' : 'play.fill'}
+                size={22}
+                weight="bold"
+                tintColor="#000000"
+              />
+            </Pressable>
+            <RoundIcon
+              icon={following ? 'star.fill' : 'star'}
+              label={following ? 'Unfollow' : 'Follow'}
+              tint={following ? tikitiColors.accentBright : undefined}
+              onPress={() => setFollowing((current) => !current)}
+            />
           </View>
-          <KenyaBand height={21} />
         </View>
 
         <View style={styles.sections}>
           <View style={styles.release}>
-            <ArtistAvatar size={56} label={NYOTA_TOUR.artist} />
+            <Artwork seed={NYOTA_TOUR.latest.title} size={60} radius={8} />
             <View style={styles.grow}>
               <Text style={tikitiType.caption}>{NYOTA_TOUR.latest.date}</Text>
-              <Text style={tikitiType.headline}>
+              <Text style={tikitiType.headline} numberOfLines={1}>
                 {NYOTA_TOUR.latest.title} – {NYOTA_TOUR.latest.kind}
               </Text>
-              <Text style={tikitiType.caption}>Latest release</Text>
+              <Text style={tikitiType.caption}>1 song</Text>
             </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={saved ? 'Saved' : 'Save'}
+              hitSlop={10}
+              onPress={() => setSaved((current) => !current)}
+            >
+              <SymbolView
+                name={saved ? 'checkmark' : 'arrow.down'}
+                size={16}
+                weight="semibold"
+                tintColor={
+                  saved ? tikitiColors.accentBright : tikitiColors.text
+                }
+              />
+            </Pressable>
           </View>
 
           <View style={styles.section}>
-            <Text style={tikitiType.title}>Top Songs</Text>
-            {NYOTA_TOUR.songs.map((song, index) => (
-              <View key={song.title} style={styles.song}>
-                <Text style={[tikitiType.caption, styles.songIndex]}>
-                  {index + 1}
-                </Text>
-                <View style={styles.grow}>
-                  <Text style={tikitiType.body}>{song.title}</Text>
-                  <Text style={tikitiType.caption}>
-                    {song.album} · {song.year}
-                  </Text>
-                </View>
-              </View>
-            ))}
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setAllSongs((current) => !current)}
+              style={styles.sectionHeader}
+            >
+              <Text style={tikitiType.title}>Top Songs</Text>
+              <SymbolView
+                name={allSongs ? 'chevron.down' : 'chevron.right'}
+                size={13}
+                weight="bold"
+                tintColor={tikitiColors.textSecondary}
+              />
+            </Pressable>
+            {(allSongs ? songs : songs.slice(0, COLLAPSED_SONGS)).map(
+              (item, index) => (
+                <Pressable
+                  key={item.title}
+                  accessibilityRole="button"
+                  onPress={() => play(index)}
+                  style={({ pressed }) => [
+                    styles.song,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Artwork seed={item.title} size={46} radius={6} />
+                  <View style={[styles.grow, styles.songText]}>
+                    <Text
+                      style={[
+                        tikitiType.body,
+                        playing && songIndex === index && styles.songPlaying,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {item.title}
+                    </Text>
+                    <Text style={tikitiType.caption} numberOfLines={1}>
+                      {item.album} · {item.year}
+                    </Text>
+                  </View>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Share ${item.title}`}
+                    hitSlop={10}
+                    onPress={() =>
+                      Share.share({
+                        message: `${item.title} by ${NYOTA_TOUR.artist}`,
+                      }).catch(() => undefined)
+                    }
+                  >
+                    <SymbolView
+                      name="ellipsis"
+                      size={15}
+                      weight="semibold"
+                      tintColor={tikitiColors.textSecondary}
+                    />
+                  </Pressable>
+                </Pressable>
+              )
+            )}
           </View>
 
           <View style={styles.section}>
             <Text style={tikitiType.title}>On Tour</Text>
-            <Text style={tikitiType.caption}>
-              {shows.length} shows across {cities.join(', ')}. Book tickets,
-              find a hotel, get directions and order a boda, tuk-tuk or car to
-              the venue, all from one tray.
-            </Text>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={tikitiType.title}>Where to Stay</Text>
-            <HotelsTray>
-              <StayCard />
-            </HotelsTray>
+            <EventTray events={shows} listTitle="">
+              <TourCard
+                caption={`${shows.length} shows · from ${formatPrice(
+                  shows.length ? Math.min(...shows.map(lowestPrice)) : 0
+                )}`}
+              />
+            </EventTray>
           </View>
         </View>
       </ScrollView>
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Back"
-        hitSlop={8}
-        onPress={goBack}
-        style={({ pressed }) => [
-          styles.back,
-          { top: insets.top + 8 },
-          pressed && styles.pressed,
-        ]}
-      >
-        <SymbolView
-          name="chevron.left"
-          size={15}
-          weight="semibold"
-          tintColor={tikitiColors.text}
-        />
-      </Pressable>
-
       <View
         pointerEvents="box-none"
-        style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 16) }]}
+        style={[styles.topBar, { top: insets.top + 6 }]}
       >
-        <EventTray events={shows} listTitle="Upcoming Concerts">
-          <TicketsBar
-            caption={`${shows.length} shows · from ${formatPrice(fromPrice)}`}
-          />
-        </EventTray>
+        <RoundIcon icon="chevron.left" label="Back" onPress={goBack} glass />
+        <View style={styles.capsule}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Share"
+            hitSlop={6}
+            onPress={shareTour}
+            style={styles.capsuleButton}
+          >
+            <SymbolView
+              name="square.and.arrow.up"
+              size={15}
+              weight="semibold"
+              tintColor={tikitiColors.text}
+            />
+          </Pressable>
+          <InfoTray showCount={shows.length}>
+            <CapsuleButton icon="ellipsis" label="More" />
+          </InfoTray>
+        </View>
       </View>
+
+      <TabBar
+        active="artists"
+        accessory={
+          <MiniPlayer
+            title={song.title}
+            artist={NYOTA_TOUR.artist}
+            playing={playing}
+            onToggle={() => setPlaying((current) => !current)}
+            onNext={() => play((songIndex + 1) % songs.length)}
+          />
+        }
+      />
     </View>
   );
 }
@@ -169,28 +290,84 @@ function UpcomingPill(props: IPressableRefProps) {
   );
 }
 
-function StayCard(props: IPressableRefProps) {
+function RoundIcon({
+  icon,
+  label,
+  tint,
+  glass,
+  ...rest
+}: IPressableRefProps & {
+  icon: SFSymbol;
+  label: string;
+  tint?: string;
+  glass?: boolean;
+}) {
   return (
     <Pressable
       accessibilityRole="button"
-      {...props}
-      style={({ pressed }) => [styles.stay, pressed && styles.pressed]}
+      accessibilityLabel={label}
+      hitSlop={8}
+      {...rest}
+      style={({ pressed }) => [
+        styles.round,
+        glass && styles.roundGlass,
+        pressed && styles.pressed,
+      ]}
     >
-      <View style={styles.stayIcon}>
+      <SymbolView
+        name={icon}
+        size={14}
+        weight="bold"
+        tintColor={tint ?? tikitiColors.text}
+      />
+    </Pressable>
+  );
+}
+
+function CapsuleButton({
+  icon,
+  label,
+  ...rest
+}: IPressableRefProps & { icon: SFSymbol; label: string }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      hitSlop={6}
+      {...rest}
+      style={styles.capsuleButton}
+    >
+      <SymbolView
+        name={icon}
+        size={15}
+        weight="semibold"
+        tintColor={tikitiColors.text}
+      />
+    </Pressable>
+  );
+}
+
+function TourCard({
+  caption,
+  ...rest
+}: IPressableRefProps & { caption: string }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      {...rest}
+      style={({ pressed }) => [styles.tour, pressed && styles.pressed]}
+    >
+      <View style={styles.tourIcon}>
         <SymbolView
-          name="bed.double.fill"
-          size={20}
+          name="ticket.fill"
+          size={18}
           weight="semibold"
           tintColor={tikitiColors.text}
         />
       </View>
       <View style={styles.grow}>
-        <Text style={tikitiType.headline}>
-          {HOTELS.length} hotels, resorts and lodges
-        </Text>
-        <Text style={tikitiType.caption} numberOfLines={2}>
-          {REGIONS.join(' · ')}
-        </Text>
+        <Text style={tikitiType.headline}>{NYOTA_TOUR.title}</Text>
+        <Text style={tikitiType.caption}>{caption}</Text>
       </View>
       <SymbolView
         name="chevron.right"
@@ -202,51 +379,58 @@ function StayCard(props: IPressableRefProps) {
   );
 }
 
-function TicketsBar({
-  caption,
-  ...props
-}: IPressableRefProps & { caption: string }) {
+function InfoTray({
+  showCount,
+  children,
+}: {
+  showCount: number;
+  children: ReactElement;
+}) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      {...props}
-      style={({ pressed }) => [styles.tickets, pressed && styles.pressed]}
-    >
-      <View style={styles.grow}>
-        <Text style={tikitiType.headline}>Get Tickets</Text>
-        <Text style={styles.ticketsCaption}>{caption}</Text>
-      </View>
-      <SymbolView
-        name="chevron.right"
-        size={14}
-        weight="bold"
-        tintColor={tikitiColors.text}
-      />
-    </Pressable>
+    <Tray.Root>
+      <Tray.Trigger asChild morph>
+        {children}
+      </Tray.Trigger>
+      <Tray.Content {...TIKITI_TRAY_CONTENT}>
+        <TikitiHeader views={{}} />
+        <Tray.Body>
+          <View style={styles.info}>
+            <Artwork seed="nyota-hero" size={84} radius={42} />
+            <Tray.Title style={styles.infoName}>
+              {NYOTA_TOUR.artist.toUpperCase()}
+            </Tray.Title>
+            <Text style={tikitiType.caption}>{NYOTA_TOUR.genre}</Text>
+            <Tray.Description style={[tikitiType.body, styles.infoBio]}>
+              {NYOTA_TOUR.bio}
+            </Tray.Description>
+            <Text style={tikitiType.caption}>
+              {NYOTA_TOUR.title} · {showCount} shows
+            </Text>
+          </View>
+        </Tray.Body>
+      </Tray.Content>
+    </Tray.Root>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: tikitiColors.background,
+    backgroundColor: tikitiColors.page,
   },
   pressed: {
-    opacity: 0.8,
+    opacity: 0.75,
   },
   grow: {
     flex: 1,
     gap: 2,
   },
-  hero: {
-    justifyContent: 'flex-end',
-    backgroundColor: tikitiColors.kenyaRed,
-  },
-  heroContent: {
+  headline: {
     alignItems: 'center',
     gap: 10,
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingTop: 18,
+    paddingBottom: 6,
   },
   pill: {
     flexDirection: 'row',
@@ -255,7 +439,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: tikitiColors.kenyaBlack,
+    backgroundColor: tikitiColors.pageButton,
   },
   pillText: {
     fontSize: 12,
@@ -263,85 +447,129 @@ const styles = StyleSheet.create({
     color: tikitiColors.text,
   },
   name: {
-    fontSize: 54,
-    fontWeight: '900',
-    letterSpacing: 6,
+    fontFamily: 'AbrilFatface_400Regular',
+    fontSize: 52,
+    letterSpacing: 2,
     color: tikitiColors.text,
   },
-  back: {
-    position: 'absolute',
-    left: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 26,
+    marginTop: 2,
+  },
+  play: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: tikitiColors.kenyaBlack,
+    paddingLeft: 3,
+    backgroundColor: '#FFFFFF',
+  },
+  round: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: tikitiColors.pageButton,
+  },
+  roundGlass: {
+    backgroundColor: tikitiColors.glass,
+  },
+  topBar: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  capsule: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 36,
+    paddingHorizontal: 4,
+    borderRadius: 18,
+    backgroundColor: tikitiColors.glass,
+  },
+  capsuleButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sections: {
-    gap: 28,
-    paddingHorizontal: 20,
-    paddingTop: 12,
+    gap: 24,
+    paddingHorizontal: 18,
+    paddingTop: 16,
   },
   release: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    padding: 12,
-    borderRadius: 18,
+    padding: 10,
+    paddingRight: 16,
+    borderRadius: 16,
     borderCurve: 'continuous',
-    backgroundColor: tikitiColors.card,
+    backgroundColor: tikitiColors.pageCard,
   },
   section: {
     gap: 10,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+  },
   song: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
+    paddingVertical: 2,
+  },
+  songText: {
     paddingVertical: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: tikitiColors.separator,
   },
-  songIndex: {
-    width: 16,
-    textAlign: 'center',
+  songPlaying: {
+    color: tikitiColors.accentBright,
   },
-  stay: {
+  tour: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
     padding: 14,
-    borderRadius: 18,
+    borderRadius: 16,
     borderCurve: 'continuous',
-    backgroundColor: tikitiColors.card,
+    backgroundColor: tikitiColors.pageCard,
   },
-  stayIcon: {
+  tourIcon: {
     width: 44,
     height: 44,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0A84FF',
-  },
-  bar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-  },
-  tickets: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    height: 64,
-    paddingHorizontal: 22,
-    borderRadius: 32,
-    borderCurve: 'continuous',
     backgroundColor: tikitiColors.accent,
   },
-  ticketsCaption: {
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.8)',
+  info: {
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  infoName: {
+    fontFamily: 'AbrilFatface_400Regular',
+    fontSize: 32,
+    letterSpacing: 1,
+    color: tikitiColors.text,
+  },
+  infoBio: {
+    textAlign: 'center',
+    color: tikitiColors.textSecondary,
+    lineHeight: 22,
   },
 });
