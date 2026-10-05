@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Morphlet Example",
+    "name": "Morphlet Kenya",
     "slug": "morphlet-example",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,7 +9,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "morphlet.example"
+      "bundleIdentifier": "morphlet.example",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Safiri uses your location to find rides near you."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +21,11 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "morphlet.example"
+      "package": "morphlet.example",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -14,6 +14,12 @@ interface IExample {
 
 const EXAMPLES: IExample[] = [
   {
+    title: 'Safiri',
+    subtitle: 'Kenyan ride-hailing map with M-Pesa checkout.',
+    icon: 'map.fill',
+    href: '/safiri',
+  },
+  {
     title: 'Playground',
     subtitle: 'Every kind of tray, with tunable springs.',
     icon: 'wand.and.stars',
@@ -44,8 +50,10 @@ export default function HomeScreen() {
         { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom },
       ]}
     >
-      <Text style={styles.title}>Morphlet</Text>
-      <Text style={styles.subtitle}>A floating tray that morphs.</Text>
+      <Text style={styles.title}>Morphlet Kenya</Text>
+      <Text style={styles.subtitle}>
+        A floating tray that morphs, from Nairobi to Mombasa.
+      </Text>
 
       <View style={styles.list}>
         {EXAMPLES.map((example) => (

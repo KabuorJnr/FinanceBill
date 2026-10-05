@@ -25,6 +25,7 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="index" />
+        <Stack.Screen name="safiri" />
         <Stack.Screen name="game" />
         <Stack.Screen name="collections" />
         <Stack.Screen name="playground" />

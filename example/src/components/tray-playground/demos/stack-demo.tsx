@@ -11,7 +11,8 @@ import {
   playgroundTrayStyles as s,
 } from '../playground-tray-parts';
 import { SlidingCheck } from '../animated-check';
-import { BitcoinIcon, EthereumIcon, UsdCoinIcon } from '../coin-icons';
+import { AirtelMoneyIcon, BankIcon, MpesaIcon } from '../coin-icons';
+import { formatKES, sendMoneyCost } from '../../safiri/kenya.data';
 import {
   TRAY_CONTENT,
   playgroundColors,
@@ -20,9 +21,9 @@ import {
 } from '../playground.theme';
 
 const ASSETS = [
-  { symbol: 'ETH', name: 'Ethereum', balance: 2.4, Icon: EthereumIcon },
-  { symbol: 'USDC', name: 'USD Coin', balance: 1250, Icon: UsdCoinIcon },
-  { symbol: 'BTC', name: 'Bitcoin', balance: 0.08, Icon: BitcoinIcon },
+  { id: 'mpesa', name: 'M-Pesa', balance: 12450, Icon: MpesaIcon },
+  { id: 'airtel', name: 'Airtel Money', balance: 3200, Icon: AirtelMoneyIcon },
+  { id: 'bank', name: 'Bank Account', balance: 86500, Icon: BankIcon },
 ];
 
 type TAsset = (typeof ASSETS)[number];
@@ -35,9 +36,7 @@ const SHARES = [
   { label: 'Max', value: 1 },
 ];
 
-function format(value: number) {
-  return value >= 100 ? value.toFixed(0) : String(Number(value.toFixed(4)));
-}
+const RECIPIENT = 'Achieng Odhiambo';
 
 export function StackDemo({ settings }: { settings: IPlaygroundSettings }) {
   const [asset, setAsset] = useState<TAsset>(ASSETS[0]!);
@@ -52,10 +51,10 @@ export function StackDemo({ settings }: { settings: IPlaygroundSettings }) {
           </Tray.Description>
           <View style={[s.group, styles.list]}>
             {ASSETS.map((option) => {
-              const isSelected = option.symbol === asset.symbol;
+              const isSelected = option.id === asset.id;
               return (
                 <Pressable
-                  key={option.symbol}
+                  key={option.id}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: isSelected }}
                   onPress={() => setAsset(option)}
@@ -67,16 +66,14 @@ export function StackDemo({ settings }: { settings: IPlaygroundSettings }) {
                       {option.name}
                     </Text>
                     <Text style={[playgroundType.caption, styles.muted]}>
-                      {format(option.balance)} {option.symbol}
+                      {formatKES(option.balance)}
                     </Text>
                   </View>
                 </Pressable>
               );
             })}
             <SlidingCheck
-              index={ASSETS.findIndex(
-                (option) => option.symbol === asset.symbol
-              )}
+              index={ASSETS.findIndex((option) => option.id === asset.id)}
               rowHeight={ASSET_ROW_HEIGHT}
             />
           </View>
@@ -138,13 +135,13 @@ function AmountStep({
           <View style={styles.amount}>
             <Tray.Morph value={share} transition="scale">
               <Text style={[playgroundType.display, styles.amountValue]}>
-                {format(amount)}
+                {formatKES(amount)}
               </Text>
             </Tray.Morph>
             <View style={styles.balance}>
               <asset.Icon size={18} />
               <Text style={[playgroundType.caption, styles.muted]}>
-                of {format(asset.balance)} {asset.symbol}
+                of {formatKES(asset.balance)}
               </Text>
             </View>
           </View>
@@ -221,10 +218,13 @@ function ReviewHeader() {
 function ReviewView({ asset, amount }: { asset: TAsset; amount: number }) {
   const { setView } = useTray();
   const facts = [
-    { label: 'To', value: 'alex.eth' },
-    { label: 'Amount', value: `${format(amount)} ${asset.symbol}` },
-    { label: 'Network Fee', value: '≈ $0.42' },
-    { label: 'Arrives', value: 'About 30 seconds' },
+    { label: 'To', value: RECIPIENT },
+    { label: 'Amount', value: formatKES(amount) },
+    {
+      label: 'Transaction cost',
+      value: `≈ ${formatKES(sendMoneyCost(amount))}`,
+    },
+    { label: 'From', value: asset.name },
   ];
 
   return (
@@ -268,8 +268,8 @@ function SentView({ asset, amount }: { asset: TAsset; amount: number }) {
       <View style={[s.article, styles.body]}>
         <Tray.Title style={s.heading}>On its way</Tray.Title>
         <Tray.Description style={s.description}>
-          {format(amount)} {asset.symbol} is heading to alex.eth. We’ll let you
-          know when it lands.
+          {formatKES(amount)} from {asset.name} is on its way to {RECIPIENT}.
+          We’ll send you an SMS confirmation.
         </Tray.Description>
       </View>
       <View style={s.actions}>

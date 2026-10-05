@@ -1,8 +1,32 @@
-# Morphlet
+# Morphlet Kenya
 
 https://github.com/user-attachments/assets/9c98763d-f6f1-4dfb-9a7b-90ca5087efc5
 
-A native, morphing floating tray for React Native.
+A native, morphing floating tray for React Native, with an example app customised for the Kenyan market.
+
+Based on [rit3zh/morphlet](https://github.com/rit3zh/morphlet) (MIT). The library in `src/` is unchanged; the Kenyan customisation lives in the example app.
+
+## What's Kenyan about it
+
+- **Safiri** (`example/src/screens/safiri-screen.tsx`): a ride-hailing map built on `react-native-maps`.
+  - Five cities: Nairobi, Mombasa, Kisumu, Nakuru and Eldoret, each with real landmarks (KICC, JKIA, Sarit Centre, Fort Jesus, Nyali Beach, Dunga Beach, Lake Nakuru National Park, Kipchoge Keino Stadium and more).
+  - Ride types priced in KES: Boda Boda, Tuk-Tuk, Matatu, Safiri Go and Safiri XL. Fares come from the trip distance.
+  - Checkout with M-Pesa, Airtel Money or cash. The app checks Kenyan mobile numbers (`07…`, `01…`, `+254…`) and walks through a simulated STK push before showing the driver, the vehicle and its yellow number plate.
+  - Every button morphs into its tray: the city picker, "Where to?", the suggestion chips and "Cancel trip".
+- **Playground**: the Send and Activity demos use M-Pesa, Airtel Money and bank balances in KES with Kenyan names, in place of crypto.
+
+City and landmark data is in `example/src/components/safiri/kenya.data.ts`. Coordinates are approximate, and fares and M-Pesa charges are illustrative.
+
+### Maps setup
+
+- **iOS** uses Apple Maps. No key needed.
+- **Android** uses Google Maps. Set a key with Maps SDK for Android enabled before you prebuild or run:
+
+```sh
+GOOGLE_MAPS_API_KEY=your-key bun example android
+```
+
+`example/app.config.js` passes the key to the `react-native-maps` config plugin, so it is never committed.
 
 ```tsx
 <Tray.Root>
@@ -103,8 +127,8 @@ const { open, close, view, setView, goBack, canGoBack, setFullScreen } =
 ## Example
 
 ```sh
-yarn
-yarn example ios   # or android
+bun install
+bun example ios   # or android
 ```
 
 ## Contributing

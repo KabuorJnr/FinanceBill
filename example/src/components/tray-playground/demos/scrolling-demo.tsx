@@ -10,6 +10,7 @@ import {
 } from '../playground-tray-parts';
 import { playgroundColors, playgroundType } from '../playground.theme';
 import { SegmentedControl } from '../segmented-control';
+import { formatKES, sendMoneyCost } from '../../safiri/kenya.data';
 
 interface ITransaction {
   id: number;
@@ -20,13 +21,21 @@ interface ITransaction {
   time: string;
 }
 
-const NAMES = ['Alex', 'Sam', 'Jordan', 'Riley', 'Casey', 'Morgan', 'Taylor'];
+const NAMES = [
+  'Wanjiru',
+  'Otieno',
+  'Achieng',
+  'Kiprono',
+  'Njeri',
+  'Mutua',
+  'Amina',
+];
 const DAYS = ['Today', 'Yesterday', 'Monday', 'Last Week'];
 
 const ACTIVITY: ITransaction[] = Array.from({ length: 36 }, (_, index) => ({
   id: index,
   incoming: index % 3 === 0,
-  amount: ((index * 37) % 100) / 10 + 0.1,
+  amount: ((index * 37) % 100) * 50 + 50,
   name: NAMES[index % NAMES.length]!,
   day: DAYS[Math.min(Math.floor(index / 9), DAYS.length - 1)]!,
   time: `${9 + (index % 12)}:${String((index * 7) % 60).padStart(2, '0')}`,
@@ -137,7 +146,7 @@ function ListView({ onSelect }: { onSelect: (item: ITransaction) => void }) {
                     ]}
                   >
                     {item.incoming ? '+' : '−'}
-                    {item.amount.toFixed(2)}
+                    {formatKES(item.amount)}
                   </Text>
                 </Pressable>
               ))}
@@ -158,7 +167,12 @@ function DetailView({ transaction }: { transaction: ITransaction }) {
   const facts = [
     { label: transaction.incoming ? 'From' : 'To', value: transaction.name },
     { label: 'Date', value: `${transaction.day}, ${transaction.time}` },
-    { label: 'Network Fee', value: '0.0004 ETH' },
+    {
+      label: 'Transaction cost',
+      value: transaction.incoming
+        ? formatKES(0)
+        : formatKES(sendMoneyCost(transaction.amount)),
+    },
     { label: 'Status', value: 'Confirmed' },
   ];
 
@@ -167,9 +181,9 @@ function DetailView({ transaction }: { transaction: ITransaction }) {
       <View style={styles.hero}>
         <Text style={[playgroundType.display, styles.heroAmount]}>
           {transaction.incoming ? '+' : '−'}
-          {transaction.amount.toFixed(2)}
+          {formatKES(transaction.amount).replace('KSh ', '')}
         </Text>
-        <Text style={[playgroundType.label, styles.time]}>ETH</Text>
+        <Text style={[playgroundType.label, styles.time]}>KES</Text>
       </View>
 
       <View style={s.group}>
