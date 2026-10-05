@@ -1,11 +1,217 @@
 {
-  "name": "finance-bill-2026",
-  "version": "1.0.0",
-  "description": "Static civic education page for Finance Bill 2026",
+  "name": "morphlet",
+  "version": "0.1.2",
+  "description": "A morphing floating tray for React Native.",
+  "main": "./lib/module/index.js",
+  "types": "./lib/typescript/src/index.d.ts",
+  "exports": {
+    ".": {
+      "morphlet-source": "./src/index.ts",
+      "types": "./lib/typescript/src/index.d.ts",
+      "default": "./lib/module/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "lib",
+    "common",
+    "ios",
+    "android",
+    "!android/build",
+    "!android/.gradle",
+    "*.podspec",
+    "react-native.config.js",
+    "!ios/build",
+    "!android/gradle",
+    "!android/gradlew",
+    "!android/gradlew.bat",
+    "!android/local.properties",
+    "!**/__tests__",
+    "!**/__fixtures__",
+    "!**/__mocks__",
+    "!**/.*"
+  ],
   "scripts": {
-    "start": "serve -s . -l 3000"
+    "example": "bun --filter morphlet-example",
+    "clean": "del-cli lib",
+    "prepare": "bob build",
+    "typecheck": "tsc",
+    "lint": "eslint \"**/*.{js,ts,tsx}\"",
+    "test": "jest",
+    "release": "release-it --only-version",
+    "test:watch": "jest --watch"
+  },
+  "keywords": [
+    "react-native",
+    "ios",
+    "tray",
+    "drawer",
+    "bottom-sheet",
+    "family",
+    "morph",
+    "fabric"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rit3zh/morphlet.git"
+  },
+  "author": "rit3zh <thisismyn07@gmail.com> (https://github.com/rit3zh)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rit3zh/morphlet/issues"
+  },
+  "homepage": "https://github.com/rit3zh/morphlet#readme",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
   },
   "devDependencies": {
-    "serve": "^14.0.1"
+    "@babel/eslint-parser": "^7.29.9",
+    "@commitlint/config-conventional": "^21.2.0",
+    "@eslint/compat": "^2.1.0",
+    "@eslint/eslintrc": "^3.3.6",
+    "@eslint/js": "^9.39.5",
+    "@jest/globals": "^29.7.0",
+    "@react-native/babel-preset": "0.86.2",
+    "@react-native/eslint-config": "0.86.2",
+    "@react-native/eslint-plugin": "^0.87.1",
+    "@react-native/jest-preset": "0.86.2",
+    "@release-it/conventional-changelog": "^12.0.0",
+    "@testing-library/react-native": "^13",
+    "@types/react": "^19.2.0",
+    "@types/react-test-renderer": "^19",
+    "@typescript-eslint/eslint-plugin": "^8.71.0",
+    "@typescript-eslint/parser": "^8.71.0",
+    "commitlint": "^21.2.1",
+    "del-cli": "^7.0.0",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-eslint-comments": "^3.2.0",
+    "eslint-plugin-ft-flow": "^3.0.11",
+    "eslint-plugin-jest": "^29.16.6",
+    "eslint-plugin-prettier": "^5.5.6",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-native": "^5.0.0",
+    "hermes-eslint": "^0.37.0",
+    "jest": "^29.7.0",
+    "lefthook": "^2.1.10",
+    "prettier": "^3.9.6",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-builder-bob": "^0.43.1",
+    "react-test-renderer": "19.2.3",
+    "release-it": "^21.0.1",
+    "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "workspaces": [
+    "example"
+  ],
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
+    ]
+  },
+  "prettier": {
+    "quoteProps": "consistent",
+    "singleQuote": true,
+    "tabWidth": 2,
+    "trailingComma": "es5",
+    "useTabs": false
+  },
+  "jest": {
+    "preset": "@react-native/jest-preset",
+    "testEnvironmentOptions": {
+      "customExportConditions": [
+        "require",
+        "react-native",
+        "morphlet-source"
+      ]
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!\\.bun/|((jest-)?react-native|@react-native(-community)?|@testing-library)/)"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/example/node_modules",
+      "<rootDir>/lib/",
+      "<rootDir>/inspo/",
+      "<rootDir>/apple-music-code/"
+    ],
+    "testMatch": [
+      "<rootDir>/src/**/__tests__/**/*.test.ts?(x)"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "release-it": {
+    "git": {
+      "commitMessage": "chore: release ${version}",
+      "tagName": "v${version}"
+    },
+    "npm": {
+      "publish": true
+    },
+    "github": {
+      "release": true
+    },
+    "plugins": {
+      "@release-it/conventional-changelog": {
+        "preset": {
+          "name": "angular"
+        }
+      }
+    }
+  },
+  "create-react-native-library": {
+    "type": "fabric-view",
+    "languages": "kotlin-swift",
+    "tools": [
+      "eslint",
+      "jest",
+      "lefthook",
+      "release-it"
+    ],
+    "version": "0.63.1"
+  },
+  "codegenConfig": {
+    "name": "MorphletSpec",
+    "type": "components",
+    "jsSrcsDir": "src/views",
+    "android": {
+      "javaPackageName": "com.morphlet"
+    },
+    "ios": {
+      "components": {
+        "MorphletHostView": {
+          "className": "MorphletHostView"
+        },
+        "MorphletContainerView": {
+          "className": "MorphletContainerView"
+        },
+        "MorphletSwitchView": {
+          "className": "MorphletSwitchView"
+        }
+      }
+    }
   }
 }

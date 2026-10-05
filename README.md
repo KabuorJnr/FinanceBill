@@ -1,32 +1,116 @@
-# Finance Bill 2026 — Civic Education Static Site
+# Morphlet
 
-This is a small static site explaining the Finance Bill 2026 (Kenya). Use this repo to serve the page locally or deploy to a static host (Vercel, Netlify).
+https://github.com/user-attachments/assets/9c98763d-f6f1-4dfb-9a7b-90ca5087efc5
 
-Quick start (local):
+A native, morphing floating tray for React Native.
 
-1. Serve with Python (no install required):
-
-```bash
-cd "c:\Users\USER\FinanceBill Web"
-python -m http.server 3000
-# open http://localhost:3000 in your browser
+```tsx
+<Tray.Root>
+  <Tray.Trigger morph>…</Tray.Trigger>
+  <Tray.Content>…</Tray.Content>
+</Tray.Root>
 ```
 
-2. Or install `serve` (Node):
+## Installation
 
-```bash
-cd "c:\Users\USER\FinanceBill Web"
-npm install
-npm start
-# open http://localhost:3000
+```sh
+npm install morphlet
+cd ios && pod install
 ```
 
-Deploy to Vercel (recommended for static sites):
+Requires the New Architecture. Android API 24+. On Expo, use a development build.
 
-1. Install Vercel CLI: `npm i -g vercel`
-2. From the project folder run: `vercel` and follow prompts.
+## Usage
 
-Notes:
+```tsx
+import { Text } from 'react-native';
+import { Tray } from 'morphlet';
 
-- The main file is `index.html`.
-- To push to a Git provider, initialize git and push, then connect repository to Vercel.
+export function Example() {
+  return (
+    <Tray.Root>
+      <Tray.Trigger>
+        <Text>Open</Text>
+      </Tray.Trigger>
+
+      <Tray.Content>
+        <Tray.Header>
+          <Tray.Title>Hello</Tray.Title>
+        </Tray.Header>
+        <Tray.Body>
+          <Tray.Description>A tray that springs to fit.</Tray.Description>
+        </Tray.Body>
+        <Tray.Footer>
+          <Tray.Close>
+            <Text>Done</Text>
+          </Tray.Close>
+        </Tray.Footer>
+      </Tray.Content>
+    </Tray.Root>
+  );
+}
+```
+
+### Views
+
+```tsx
+<Tray.Root defaultView="options">
+  <Tray.Trigger>…</Tray.Trigger>
+  <Tray.Content>
+    <Tray.Body>
+      <Tray.View name="options">
+        <Options />
+      </Tray.View>
+      <Tray.View name="details" fullScreen>
+        <Details />
+      </Tray.View>
+    </Tray.Body>
+  </Tray.Content>
+</Tray.Root>;
+
+function Options() {
+  const { setView } = useTray();
+  return <Row title="Details" onPress={() => setView('details')} />;
+}
+```
+
+Wrap anything in `<Tray.Morph value={...}>` to transition it when `value` changes. Add `stack` to `Tray.Content` to push the tray below back like an iOS sheet.
+
+## API
+
+| Component                         | Purpose                                                                            |
+| --------------------------------- | ---------------------------------------------------------------------------------- |
+| `Tray.Root`                       | Open state and active view. `open`, `view`, `transition`, `animation`.             |
+| `Tray.Trigger` / `Tray.Close`     | Open or close. `asChild`, and `morph` to grow the tray from the trigger.           |
+| `Tray.Content`                    | The card. `backgroundColor`, `cornerRadius`, `dismissible`, `fullScreen`, `stack`. |
+| `Tray.Header` / `Tray.Footer`     | Fixed sections around the body.                                                    |
+| `Tray.Body` / `Tray.View`         | Morphs between named views.                                                        |
+| `Tray.Morph`                      | Transitions children when `value` changes.                                         |
+| `Tray.Title` / `Tray.Description` | Accessible text.                                                                   |
+
+```ts
+const { open, close, view, setView, goBack, canGoBack, setFullScreen } =
+  useTray();
+```
+
+**Transitions:** `morph` · `slide` · `fade` · `scale`
+**Animation presets:** `default` · `smooth` · `snappy` · `bouncy` — or pass custom springs:
+
+```tsx
+<Tray.Root animation={{ preset: 'smooth', morph: { response: 0.6, dampingFraction: 0.8 } }}>
+```
+
+## Example
+
+```sh
+yarn
+yarn example ios   # or android
+```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+MIT
