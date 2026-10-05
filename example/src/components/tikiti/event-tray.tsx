@@ -22,12 +22,16 @@ import {
 } from './hotel-views';
 import { hotelsNear, type IHotel } from './hotels.data';
 import {
-  ARTIST,
+  categoryOf,
+  displayName,
+  initialsOf,
+  type IEvent,
+  type ITier,
+} from './events.data';
+import {
   DRIVERS,
   MAX_TICKETS,
   RIDES,
-  SHOWS,
-  TIERS,
   TRAVEL_MODES,
   dateParts,
   distanceKm,
@@ -35,12 +39,11 @@ import {
   formatKES,
   formatKm,
   formatLongDate,
+  formatPrice,
   formatTime,
   groupByMonth,
   travelMinutes,
   type IRide,
-  type IShow,
-  type ITier,
   type IVenue,
   type TRideId,
   type TTravelMode,
@@ -79,7 +82,7 @@ function startInMaps(venue: IVenue, mode: Exclude<TTravelMode, 'ride'>) {
 }
 
 interface IDraft {
-  show: IShow;
+  event: IEvent;
   tierId: string;
   quantity: number;
   mode: TTravelMode;
@@ -88,10 +91,10 @@ interface IDraft {
   stay: IStay;
 }
 
-function newDraft(): IDraft {
+function newDraft(event: IEvent): IDraft {
   return {
-    show: SHOWS[0]!,
-    tierId: TIERS[0]!.id,
+    event,
+    tierId: event.tiers[0]!.id,
     quantity: 2,
     mode: 'ride',
     rideId: 'boda',
@@ -100,19 +103,34 @@ function newDraft(): IDraft {
   };
 }
 
-export function ConcertTray({ children }: { children: ReactElement }) {
-  const [draft, setDraft] = useState<IDraft>(newDraft);
+interface IEventTrayProps {
+  /** One event opens straight to it; several open a list first. */
+  events: IEvent[];
+  listTitle?: string;
+  children: ReactElement;
+}
+
+export function EventTray({
+  events,
+  listTitle = 'Upcoming Events',
+  children,
+}: IEventTrayProps) {
+  const [draft, setDraft] = useState<IDraft>(() => newDraft(events[0]!));
   const update = (patch: Partial<IDraft>) =>
     setDraft((current) => ({ ...current, ...patch }));
 
-  const { show } = draft;
-  const tier = TIERS.find((option) => option.id === draft.tierId)!;
+  const show = draft.event;
+  const tier =
+    show.tiers.find((option) => option.id === draft.tierId) ?? show.tiers[0]!;
   const ride = RIDES.find((option) => option.id === draft.rideId)!;
+  const isList = events.length > 1;
+
+  if (events.length === 0) return children;
 
   return (
     <Tray.Root
-      defaultView="shows"
-      onOpenChange={(open) => open && setDraft(newDraft())}
+      defaultView={isList ? 'shows' : 'concert'}
+      onOpenChange={(open) => open && setDraft(newDraft(events[0]!))}
     >
       <Tray.Trigger asChild morph>
         {children}
@@ -121,8 +139,8 @@ export function ConcertTray({ children }: { children: ReactElement }) {
       <Tray.Content {...TIKITI_TRAY_CONTENT}>
         <TikitiHeader
           views={{
-            shows: { title: 'Upcoming Concerts' },
-            concert: { title: 'Concert' },
+            shows: { title: listTitle },
+            concert: { title: categoryOf(show.category).label },
             directions: { title: 'Directions' },
             rides: { title: 'Choose a Ride' },
             ride: { title: 'Ride Booked', back: false },
@@ -134,7 +152,12 @@ export function ConcertTray({ children }: { children: ReactElement }) {
         />
         <Tray.Body>
           <Tray.View name="shows">
-            <ShowsView onSelect={(next) => update({ show: next })} />
+            <ShowsView
+              events={events}
+              onSelect={(next) =>
+                update({ event: next, tierId: next.tiers[0]!.id })
+              }
+            />
           </Tray.View>
           <Tray.View name="concert">
             <ConcertView show={show} />
@@ -197,8 +220,16 @@ export function ConcertTray({ children }: { children: ReactElement }) {
   );
 }
 
-function ShowsView({ onSelect }: { onSelect: (show: IShow) => void }) {
+function ShowsView({
+  events,
+  onSelect,
+}: {
+  events: IEvent[];
+  onSelect: (event: IEvent) => void;
+}) {
   const { setView } = useTray();
+  // A tour lists venues; a mixed list names each event.
+  const isTour = events.every((event) => event.tourId === events[0]!.tourId);
 
   return (
     <ScrollView
@@ -206,22 +237,27 @@ function ShowsView({ onSelect }: { onSelect: (show: IShow) => void }) {
       contentContainerStyle={styles.page}
       showsVerticalScrollIndicator={false}
     >
-      {groupByMonth(SHOWS).map((group) => (
+      {groupByMonth(events).map((group) => (
         <View key={group.month} style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={tikitiType.title}>{group.month}</Text>
             <Text style={tikitiType.caption}>
-              {group.shows.length} {group.shows.length === 1 ? 'show' : 'shows'}
+              {group.items.length}{' '}
+              {group.items.length === 1 ? 'event' : 'events'}
             </Text>
           </View>
           <Group>
-            {group.shows.map((item, index) => (
+            {group.items.map((item, index) => (
               <ListRow
                 key={item.id}
                 divider={index > 0}
                 leading={<DateBlock date={item.date} />}
-                title={item.venue.name}
-                subtitle={`${item.venue.area}, ${item.venue.city.name} · ${formatTime(item.time)}`}
+                title={isTour && item.tourId ? item.venue.name : item.title}
+                subtitle={
+                  isTour && item.tourId
+                    ? `${item.venue.area}, ${item.venue.city.name} · ${formatTime(item.time)}`
+                    : `${item.venue.name}, ${item.venue.city.name} · ${formatTime(item.time)}`
+                }
                 chevron
                 onPress={() => {
                   onSelect(item);
@@ -255,7 +291,7 @@ function Fact({
   );
 }
 
-function ConcertView({ show }: { show: IShow }) {
+function ConcertView({ show }: { show: IEvent }) {
   const { setView } = useTray();
   const { venue } = show;
   const nearbyCount = hotelsNear(venue.coordinate).length;
@@ -273,8 +309,13 @@ function ConcertView({ show }: { show: IShow }) {
       <Group>
         <Fact label="Date" value={formatLongDate(show.date)} />
         <Fact label="Time" value={formatTime(show.time)} divider />
-        <Fact label="Artist" value={ARTIST.name} divider />
+        <Fact label="Organiser" value={show.organizer.name} divider />
       </Group>
+      {!!show.description && (
+        <Text style={tikitiType.caption} numberOfLines={3}>
+          {show.description}
+        </Text>
+      )}
       <Group>
         <ListRow
           leading={
@@ -479,7 +520,7 @@ function RideView({ venue, ride }: { venue: IVenue; ride: IRide }) {
 }
 
 interface ITicketsViewProps {
-  show: IShow;
+  show: IEvent;
   tier: ITier;
   quantity: number;
   onTierChange: (tierId: string) => void;
@@ -501,12 +542,14 @@ function TicketsView({
   return (
     <View style={styles.page}>
       <View style={styles.artist}>
-        <ArtistAvatar size={52} />
+        <ArtistAvatar size={52} event={show} />
         <View style={styles.grow}>
           <Text style={tikitiType.eyebrow}>
             {monthShort.toUpperCase()} {day} · {formatTime(show.time)}
           </Text>
-          <Text style={tikitiType.title}>{ARTIST.name}</Text>
+          <Text style={tikitiType.title} numberOfLines={1}>
+            {displayName(show)}
+          </Text>
           <Text style={tikitiType.caption} numberOfLines={1}>
             {show.venue.name} · {show.venue.city.name}
           </Text>
@@ -515,7 +558,7 @@ function TicketsView({
 
       <Text style={tikitiType.section}>Ticket Type</Text>
       <Group>
-        {TIERS.map((option, index) => (
+        {show.tiers.map((option, index) => (
           <ListRow
             key={option.id}
             divider={index > 0}
@@ -524,7 +567,7 @@ function TicketsView({
             title={option.name}
             subtitle={option.detail}
             trailing={
-              <Text style={tikitiType.body}>{formatKES(option.price)}</Text>
+              <Text style={tikitiType.body}>{formatPrice(option.price)}</Text>
             }
             onPress={() => onTierChange(option.id)}
           />
@@ -577,16 +620,16 @@ function TicketsView({
           <Text style={tikitiType.headline}>Total</Text>
           <Text style={tikitiType.caption}>
             {quantity} {quantity === 1 ? 'Ticket' : 'Tickets'} ·{' '}
-            {formatKES(tier.price)} each
+            {formatPrice(tier.price)} each
           </Text>
         </View>
         <Tray.Morph value={total} transition="scale">
-          <Text style={tikitiType.total}>{formatKES(total)}</Text>
+          <Text style={tikitiType.total}>{formatPrice(total)}</Text>
         </Tray.Morph>
       </View>
 
       <CheckoutTray
-        show={show}
+        event={show}
         tier={tier}
         quantity={quantity}
         total={total}
@@ -596,16 +639,26 @@ function TicketsView({
   );
 }
 
-export function ArtistAvatar({ size }: { size: number }) {
+export function ArtistAvatar({
+  size,
+  event,
+  label,
+}: {
+  size: number;
+  event?: IEvent;
+  label?: string;
+}) {
+  const text = label ?? (event ? displayName(event) : '');
   return (
     <View
       style={[
         styles.artistAvatar,
         { width: size, height: size, borderRadius: size / 4 },
+        event && { backgroundColor: categoryOf(event.category).color },
       ]}
     >
       <Text style={[tikitiType.headline, { fontSize: size * 0.34 }]}>
-        {ARTIST.initials}
+        {initialsOf(text)}
       </Text>
     </View>
   );

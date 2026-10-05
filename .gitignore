@@ -87,3 +87,10 @@ android/generated
 .env
 .env.*
 !.env.example
+
+# Firebase: never commit service account keys or CLI state
+*firebase-adminsdk*.json
+service-account*.json
+.firebase/
+firebase-debug.log
+firestore-debug.log

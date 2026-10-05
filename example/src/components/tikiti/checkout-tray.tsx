@@ -13,17 +13,16 @@ import { Tray, useTray } from 'morphlet';
 import { AnimatedTabs } from '../artist/animated-tabs';
 import { SymbolView } from '../symbol-view';
 import {
-  ARTIST,
   PAYMENT_METHODS,
   dateParts,
   formatKES,
+  formatPrice,
   formatKenyanPhone,
   formatTime,
   normalizeKenyanPhone,
-  type IShow,
-  type ITier,
   type TPaymentId,
 } from './tikiti.data';
+import { displayName, type IEvent, type ITier } from './events.data';
 import {
   Field,
   Group,
@@ -36,7 +35,7 @@ import { TIKITI_TRAY_CONTENT, tikitiColors } from './tikiti.theme';
 const STK_MS = 4000;
 
 interface ICheckoutTrayProps {
-  show: IShow;
+  event: IEvent;
   tier: ITier;
   quantity: number;
   total: number;
@@ -53,7 +52,7 @@ interface IBuyer {
 const NEW_BUYER: IBuyer = { name: '', phone: '', payment: 'mpesa' };
 
 export function CheckoutTray({
-  show,
+  event: show,
   tier,
   quantity,
   total,
@@ -126,7 +125,7 @@ export function CheckoutTray({
 }
 
 interface IOrder {
-  show: IShow;
+  show: IEvent;
   tier: ITier;
   quantity: number;
   total: number;
@@ -155,7 +154,7 @@ function Summary({ order }: { order: IOrder }) {
           {monthShort.toUpperCase()} {day} · {formatTime(order.show.time)}
         </Text>
       </View>
-      <Text style={tikitiType.headline}>{formatKES(order.total)}</Text>
+      <Text style={tikitiType.headline}>{formatPrice(order.total)}</Text>
     </View>
   );
 }
@@ -175,7 +174,8 @@ function FormView({ order, buyer, onChange }: IFormViewProps) {
   const confirm = () => {
     if (!canPay) return;
     Keyboard.dismiss();
-    setView('paying');
+    // Free tickets skip the mobile money prompt.
+    setView(order.total === 0 ? 'done' : 'paying');
   };
 
   return (
@@ -216,12 +216,16 @@ function FormView({ order, buyer, onChange }: IFormViewProps) {
           : 'Your e-tickets arrive by SMS on this number.'}
       </Text>
 
-      <Text style={tikitiType.section}>Pay With</Text>
-      <AnimatedTabs
-        tabs={PAYMENT_METHODS}
-        value={buyer.payment}
-        onChange={(payment) => onChange({ payment })}
-      />
+      {order.total > 0 && (
+        <>
+          <Text style={tikitiType.section}>Pay With</Text>
+          <AnimatedTabs
+            tabs={PAYMENT_METHODS}
+            value={buyer.payment}
+            onChange={(payment) => onChange({ payment })}
+          />
+        </>
+      )}
 
       <TikitiButton
         label="Confirm Order"
@@ -325,7 +329,8 @@ function DoneView({
         Uko Ndani! You’re Going
       </Tray.Title>
       <Tray.Description style={[tikitiType.caption, styles.centerText]}>
-        {ARTIST.name} at {order.show.venue.name}, {month} {day}.{'\n'}
+        {displayName(order.show)} at {order.show.venue.name}, {month} {day}.
+        {'\n'}
         {order.quantity} {order.quantity === 1 ? 'Ticket' : 'Tickets'},{' '}
         {order.tier.name}, sent to{' '}
         {order.phone ? formatKenyanPhone(order.phone) : 'your phone'} by SMS.

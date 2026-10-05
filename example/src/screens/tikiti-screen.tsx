@@ -1,10 +1,9 @@
-import { useCallback, type ComponentRef, type Ref } from 'react';
+import { useCallback, useState, type ComponentRef, type Ref } from 'react';
 import {
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
   type PressableProps,
 } from 'react-native';
@@ -13,24 +12,26 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { SymbolView } from '../components/symbol-view';
+import { SymbolView, type SFSymbol } from '../components/symbol-view';
 import {
-  ARTIST,
-  ArtistAvatar,
-  ConcertTray,
+  CATEGORIES,
+  CITIES,
+  EventTray,
   HOTELS,
   HotelsTray,
-  REGIONS,
-  SHOWS,
-  TIERS,
-  formatKES,
+  NYOTA_TOUR,
+  OrganizerTray,
+  categoryOf,
+  dateParts,
+  formatPrice,
+  formatTime,
+  lowestPrice,
   tikitiColors,
   tikitiType,
+  useEvents,
+  type IEvent,
+  type TCategory,
 } from '../components/tikiti';
-
-const HERO_SHARE = 0.56;
-const CITIES = [...new Set(SHOWS.map((show) => show.venue.city.name))];
-const FROM_PRICE = Math.min(...TIERS.map((tier) => tier.price));
 
 interface IPressableRefProps extends Omit<PressableProps, 'style'> {
   ref?: Ref<ComponentRef<typeof Pressable>>;
@@ -39,7 +40,16 @@ interface IPressableRefProps extends Omit<PressableProps, 'style'> {
 export default function TikitiScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
+  const { events, organizer, backend, error } = useEvents();
+  const [cityId, setCityId] = useState<string | null>(null);
+  const [category, setCategory] = useState<TCategory | null>(null);
+
+  const listed = events.filter(
+    (event) =>
+      (!cityId || event.venue.city.id === cityId) &&
+      (!category || event.category === category)
+  );
+  const tourStops = events.filter((event) => event.tourId === NYOTA_TOUR.id);
 
   const goBack = useCallback(() => {
     if (router.canGoBack()) router.back();
@@ -52,124 +62,195 @@ export default function TikitiScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
-      >
-        <View
-          style={[styles.hero, { height: Math.round(height * HERO_SHARE) }]}
-        >
-          <LinearGradient
-            colors={[
-              tikitiColors.kenyaRed,
-              '#5A0712',
-              tikitiColors.kenyaGreen,
-              tikitiColors.background,
-            ]}
-            locations={[0, 0.45, 0.8, 1]}
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={styles.heroContent}>
-            <ConcertTray>
-              <UpcomingPill />
-            </ConcertTray>
-            <Text style={styles.name}>{ARTIST.name.toUpperCase()}</Text>
-            <Text style={tikitiType.caption}>
-              {ARTIST.genre} · {ARTIST.tour}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.sections}>
-          <View style={styles.release}>
-            <ArtistAvatar size={56} />
-            <View style={styles.grow}>
-              <Text style={tikitiType.caption}>{ARTIST.latest.date}</Text>
-              <Text style={tikitiType.headline}>
-                {ARTIST.latest.title} – {ARTIST.latest.kind}
-              </Text>
-              <Text style={tikitiType.caption}>Latest release</Text>
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={tikitiType.title}>Top Songs</Text>
-            {ARTIST.songs.map((song, index) => (
-              <View key={song.title} style={styles.song}>
-                <Text style={[tikitiType.caption, styles.songIndex]}>
-                  {index + 1}
-                </Text>
-                <View style={styles.grow}>
-                  <Text style={tikitiType.body}>{song.title}</Text>
-                  <Text style={tikitiType.caption}>
-                    {song.album} · {song.year}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.section}>
-            <Text style={tikitiType.title}>On Tour</Text>
-            <Text style={tikitiType.caption}>
-              {SHOWS.length} shows across {CITIES.join(', ')}. Book tickets,
-              find a hotel, get directions and order a boda, tuk-tuk or car to
-              the venue, all from one tray.
-            </Text>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={tikitiType.title}>Where to Stay</Text>
-            <HotelsTray>
-              <StayCard />
-            </HotelsTray>
-          </View>
-        </View>
-      </ScrollView>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Back"
-        hitSlop={8}
-        onPress={goBack}
-        style={({ pressed }) => [
-          styles.back,
-          { top: insets.top + 8 },
-          pressed && styles.pressed,
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 110 },
         ]}
       >
-        <SymbolView
-          name="chevron.left"
-          size={15}
-          weight="semibold"
-          tintColor={tikitiColors.text}
+        <View style={styles.header}>
+          <RoundButton icon="chevron.left" label="Back" onPress={goBack} />
+          <View style={styles.grow}>
+            <Text style={styles.brand}>Tikiti</Text>
+            <Text style={tikitiType.caption}>
+              {events.length} upcoming events across Kenya
+            </Text>
+          </View>
+          <OrganizerTray>
+            <RoundButton
+              icon={organizer ? 'person.fill' : 'person.badge.plus'}
+              label="For organisers"
+            />
+          </OrganizerTray>
+        </View>
+
+        {error && (
+          <Text style={[tikitiType.caption, styles.error]}>
+            Couldn’t load organisers’ events: {error}
+          </Text>
+        )}
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/artist')}
+          style={({ pressed }) => [styles.featured, pressed && styles.pressed]}
+        >
+          <LinearGradient
+            colors={[tikitiColors.kenyaRed, '#5A0712', tikitiColors.kenyaGreen]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <Text style={styles.featuredEyebrow}>FEATURED TOUR</Text>
+          <Text style={styles.featuredTitle}>{NYOTA_TOUR.artist}</Text>
+          <Text style={styles.featuredCaption}>
+            {NYOTA_TOUR.title} · {tourStops.length} shows
+          </Text>
+        </Pressable>
+
+        <Filters
+          options={CITIES.map((city) => ({ value: city.id, label: city.name }))}
+          value={cityId}
+          allLabel="All Kenya"
+          onChange={setCityId}
         />
-      </Pressable>
+        <Filters
+          options={CATEGORIES}
+          value={category}
+          allLabel="Everything"
+          onChange={setCategory}
+        />
+
+        <View style={styles.list}>
+          {listed.length === 0 ? (
+            <Text style={[tikitiType.caption, styles.empty]}>
+              Hakuna matukio. No events match these filters yet.
+            </Text>
+          ) : (
+            listed.map((event) => (
+              <EventTray key={event.id} events={[event]}>
+                <EventRow event={event} />
+              </EventTray>
+            ))
+          )}
+        </View>
+
+        <Text style={[tikitiType.title, styles.sectionTitle]}>
+          Where to Stay
+        </Text>
+        <HotelsTray>
+          <StayCard />
+        </HotelsTray>
+
+        <Text style={[tikitiType.caption, styles.footnote]}>
+          {backend === 'firebase'
+            ? 'Organisers’ events are live from Firebase.'
+            : 'Firebase isn’t configured, so posted events stay on this phone.'}
+        </Text>
+      </ScrollView>
 
       <View
         pointerEvents="box-none"
         style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 16) }]}
       >
-        <ConcertTray>
-          <TicketsBar />
-        </ConcertTray>
+        <OrganizerTray>
+          <PostBar signedIn={!!organizer} />
+        </OrganizerTray>
       </View>
     </View>
   );
 }
 
-function UpcomingPill(props: IPressableRefProps) {
+function RoundButton({
+  icon,
+  label,
+  ...rest
+}: IPressableRefProps & { icon: SFSymbol; label: string }) {
   return (
     <Pressable
       accessibilityRole="button"
-      {...props}
-      style={({ pressed }) => [styles.pill, pressed && styles.pressed]}
+      accessibilityLabel={label}
+      hitSlop={8}
+      {...rest}
+      style={({ pressed }) => [styles.round, pressed && styles.pressed]}
     >
       <SymbolView
-        name="ticket.fill"
-        size={12}
+        name={icon}
+        size={15}
         weight="semibold"
         tintColor={tikitiColors.text}
       />
-      <Text style={styles.pillText}>Upcoming Concerts</Text>
+    </Pressable>
+  );
+}
+
+function Filters<TValue extends string>({
+  options,
+  value,
+  allLabel,
+  onChange,
+}: {
+  options: { value: TValue; label: string }[];
+  value: TValue | null;
+  allLabel: string;
+  onChange: (value: TValue | null) => void;
+}) {
+  const all = [{ value: null, label: allLabel }, ...options];
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.bleed}
+      contentContainerStyle={styles.chips}
+    >
+      {all.map((option) => {
+        const selected = option.value === value;
+        return (
+          <Pressable
+            key={option.label}
+            accessibilityRole="radio"
+            accessibilityState={{ selected }}
+            onPress={() => onChange(option.value)}
+            style={[styles.chip, selected && styles.chipSelected]}
+          >
+            <Text style={[tikitiType.caption, selected && styles.chipText]}>
+              {option.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+function EventRow({ event, ...rest }: IPressableRefProps & { event: IEvent }) {
+  const { weekday, day, monthShort } = dateParts(event.date);
+  const category = categoryOf(event.category);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${event.title}, ${weekday} ${day} ${monthShort}`}
+      {...rest}
+      style={({ pressed }) => [styles.event, pressed && styles.pressed]}
+    >
+      <View style={[styles.date, { backgroundColor: category.color }]}>
+        <Text style={styles.dateMonth}>{monthShort.toUpperCase()}</Text>
+        <Text style={styles.dateDay}>{day}</Text>
+      </View>
+      <View style={styles.grow}>
+        <Text style={tikitiType.headline} numberOfLines={1}>
+          {event.title}
+        </Text>
+        <Text style={tikitiType.caption} numberOfLines={1}>
+          {weekday} {formatTime(event.time)} · {event.venue.name},{' '}
+          {event.venue.city.name}
+        </Text>
+        <Text style={tikitiType.caption} numberOfLines={1}>
+          {category.label} · by {event.organizer.name}
+        </Text>
+      </View>
+      <Text style={[tikitiType.caption, styles.price]}>
+        {formatPrice(lowestPrice(event))}
+      </Text>
     </Pressable>
   );
 }
@@ -193,9 +274,7 @@ function StayCard(props: IPressableRefProps) {
         <Text style={tikitiType.headline}>
           {HOTELS.length} hotels, resorts and lodges
         </Text>
-        <Text style={tikitiType.caption} numberOfLines={2}>
-          {REGIONS.join(' · ')}
-        </Text>
+        <Text style={tikitiType.caption}>Nightly rates by room type</Text>
       </View>
       <SymbolView
         name="chevron.right"
@@ -207,106 +286,156 @@ function StayCard(props: IPressableRefProps) {
   );
 }
 
-function TicketsBar(props: IPressableRefProps) {
+function PostBar({
+  signedIn,
+  ...rest
+}: IPressableRefProps & { signedIn: boolean }) {
   return (
     <Pressable
       accessibilityRole="button"
-      {...props}
-      style={({ pressed }) => [styles.tickets, pressed && styles.pressed]}
+      {...rest}
+      style={({ pressed }) => [styles.post, pressed && styles.pressed]}
     >
-      <View style={styles.grow}>
-        <Text style={tikitiType.headline}>Get Tickets</Text>
-        <Text style={styles.ticketsCaption}>
-          {SHOWS.length} shows · from {formatKES(FROM_PRICE)}
-        </Text>
-      </View>
       <SymbolView
-        name="chevron.right"
-        size={14}
+        name="plus"
+        size={16}
         weight="bold"
         tintColor={tikitiColors.text}
       />
+      <View style={styles.grow}>
+        <Text style={tikitiType.headline}>
+          {signedIn ? 'Post or Manage Events' : 'Organising an Event?'}
+        </Text>
+        <Text style={styles.postCaption}>
+          {signedIn
+            ? 'Publish and sell tickets with M-Pesa'
+            : 'Create an organiser account and post it'}
+        </Text>
+      </View>
     </Pressable>
   );
 }
+
+const GUTTER = 20;
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: tikitiColors.background,
   },
-  pressed: {
-    opacity: 0.8,
+  content: {
+    gap: 14,
+    paddingHorizontal: GUTTER,
   },
   grow: {
     flex: 1,
     gap: 2,
   },
-  hero: {
-    justifyContent: 'flex-end',
+  pressed: {
+    opacity: 0.8,
   },
-  heroContent: {
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 24,
-    paddingBottom: 12,
-  },
-  pill: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    gap: 12,
   },
-  pillText: {
-    fontSize: 12,
-    fontWeight: '600',
+  brand: {
+    fontSize: 30,
+    fontWeight: '800',
     color: tikitiColors.text,
   },
-  name: {
-    fontSize: 54,
-    fontWeight: '900',
-    letterSpacing: 6,
-    color: tikitiColors.text,
-  },
-  back: {
-    position: 'absolute',
-    left: 16,
+  round: {
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    backgroundColor: tikitiColors.card,
   },
-  sections: {
-    gap: 28,
-    paddingHorizontal: 20,
-    paddingTop: 12,
+  error: {
+    color: tikitiColors.accent,
   },
-  release: {
+  featured: {
+    overflow: 'hidden',
+    gap: 2,
+    padding: 18,
+    borderRadius: 22,
+    borderCurve: 'continuous',
+  },
+  featuredEyebrow: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: 'rgba(255, 255, 255, 0.75)',
+  },
+  featuredTitle: {
+    fontSize: 32,
+    fontWeight: '900',
+    letterSpacing: 2,
+    color: tikitiColors.text,
+  },
+  featuredCaption: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.85)',
+  },
+  bleed: {
+    marginHorizontal: -GUTTER,
+    flexGrow: 0,
+  },
+  chips: {
+    gap: 8,
+    paddingHorizontal: GUTTER,
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: tikitiColors.card,
+  },
+  chipSelected: {
+    backgroundColor: tikitiColors.accent,
+  },
+  chipText: {
+    color: tikitiColors.text,
+  },
+  list: {
+    gap: 10,
+  },
+  empty: {
+    paddingVertical: 24,
+    textAlign: 'center',
+  },
+  event: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
     padding: 12,
     borderRadius: 18,
     borderCurve: 'continuous',
     backgroundColor: tikitiColors.card,
   },
-  section: {
-    gap: 10,
-  },
-  song: {
-    flexDirection: 'row',
+  date: {
+    width: 46,
     alignItems: 'center',
-    gap: 14,
-    paddingVertical: 4,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
-  songIndex: {
-    width: 16,
-    textAlign: 'center',
+  dateMonth: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    color: 'rgba(255, 255, 255, 0.85)',
+  },
+  dateDay: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: tikitiColors.text,
+  },
+  price: {
+    color: tikitiColors.text,
+  },
+  sectionTitle: {
+    marginTop: 10,
   },
   stay: {
     flexDirection: 'row',
@@ -325,26 +454,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#0A84FF',
   },
+  footnote: {
+    textAlign: 'center',
+    marginTop: 6,
+  },
   bar: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: 20,
+    paddingHorizontal: GUTTER,
     paddingTop: 12,
   },
-  tickets: {
+  post: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
     height: 64,
     paddingHorizontal: 22,
     borderRadius: 32,
     borderCurve: 'continuous',
     backgroundColor: tikitiColors.accent,
   },
-  ticketsCaption: {
+  postCaption: {
     fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.85)',
   },
 });

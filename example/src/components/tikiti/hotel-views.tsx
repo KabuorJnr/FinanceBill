@@ -15,6 +15,7 @@ import {
   describeHotel,
   hotelsByRegion,
   hotelsNear,
+  roomsFor,
   type IHotel,
 } from './hotels.data';
 import {
@@ -29,6 +30,7 @@ import {
   Group,
   ListRow,
   PinMap,
+  Radio,
   Stepper,
   TikitiButton,
   tikitiType,
@@ -36,11 +38,21 @@ import {
 import { tikitiColors } from './tikiti.theme';
 
 export interface IStay {
+  roomId: string;
   nights: number;
   rooms: number;
 }
 
-export const NEW_STAY: IStay = { nights: 1, rooms: 1 };
+export const NEW_STAY: IStay = { roomId: 'standard', nights: 1, rooms: 1 };
+
+function roomOf(hotel: IHotel, stay: IStay) {
+  const rooms = roomsFor(hotel);
+  return rooms.find((room) => room.id === stay.roomId) ?? rooms[0]!;
+}
+
+function pluralize(count: number, word: string) {
+  return `${count} ${word}${count === 1 ? '' : 's'}`;
+}
 
 const HOTEL_COLOR = '#0A84FF';
 
@@ -84,9 +96,12 @@ function HotelRow({
       title={hotel.name}
       subtitle={detail}
       trailing={
-        <Text style={[tikitiType.caption, styles.price]}>
-          {formatKES(hotel.from)}
-        </Text>
+        <View style={styles.rate}>
+          <Text style={[tikitiType.caption, styles.price]}>
+            {formatKES(hotel.from)}
+          </Text>
+          <Text style={tikitiType.caption}>/ night</Text>
+        </View>
       }
       chevron
       onPress={onPress}
@@ -212,11 +227,17 @@ export function HotelView({
 }: IHotelViewProps) {
   const { setView } = useTray();
   const km = venue ? distanceKm(hotel.coordinate, venue.coordinate) : null;
-  const total = hotel.from * stay.nights * stay.rooms;
+  const room = roomOf(hotel, stay);
+  const total = room.nightly * stay.nights * stay.rooms;
 
   return (
-    <View style={styles.page}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.page}
+      showsVerticalScrollIndicator={false}
+    >
       <PinMap
+        height={120}
         pins={[
           {
             coordinate: hotel.coordinate,
@@ -243,6 +264,29 @@ export function HotelView({
         )}
       </Group>
 
+      <Text style={tikitiType.section}>Room Type · Nightly Rate</Text>
+      <Group>
+        {roomsFor(hotel).map((option, index) => (
+          <ListRow
+            key={option.id}
+            divider={index > 0}
+            selected={option.id === room.id}
+            leading={<Radio selected={option.id === room.id} />}
+            title={option.name}
+            subtitle={`${option.detail} · ${option.mealPlan}`}
+            trailing={
+              <View style={styles.rate}>
+                <Text style={tikitiType.headline}>
+                  {formatKES(option.nightly)}
+                </Text>
+                <Text style={tikitiType.caption}>per night</Text>
+              </View>
+            }
+            onPress={() => onStayChange({ ...stay, roomId: option.id })}
+          />
+        ))}
+      </Group>
+
       <Group>
         <StepperRow
           title="Nights"
@@ -263,7 +307,8 @@ export function HotelView({
         <View style={styles.grow}>
           <Text style={tikitiType.headline}>Estimated total</Text>
           <Text style={tikitiType.caption}>
-            From {formatKES(hotel.from)} per room per night
+            {formatKES(room.nightly)} × {pluralize(stay.nights, 'night')} ×{' '}
+            {pluralize(stay.rooms, 'room')}
           </Text>
         </View>
         <Tray.Morph value={total} transition="scale">
@@ -284,7 +329,11 @@ export function HotelView({
           onPress={() => setView('stay')}
         />
       </View>
-    </View>
+      <Text style={tikitiType.caption}>
+        Rates are indicative and change with season and availability. The hotel
+        confirms the final price.
+      </Text>
+    </ScrollView>
   );
 }
 
@@ -318,7 +367,8 @@ export function StayView({
   stay: IStay;
   checkIn?: string;
 }) {
-  const total = hotel.from * stay.nights * stay.rooms;
+  const room = roomOf(hotel, stay);
+  const total = room.nightly * stay.nights * stay.rooms;
 
   return (
     <View style={[styles.page, styles.center]}>
@@ -334,11 +384,12 @@ export function StayView({
         Karibu! Room Reserved
       </Tray.Title>
       <Tray.Description style={[tikitiType.caption, styles.centerText]}>
-        {stay.rooms} {stay.rooms === 1 ? 'room' : 'rooms'} for {stay.nights}{' '}
-        {stay.nights === 1 ? 'night' : 'nights'} at {hotel.name}
+        {pluralize(stay.rooms, room.name)} ({room.mealPlan.toLowerCase()}) for{' '}
+        {pluralize(stay.nights, 'night')} at {hotel.name}
         {checkIn ? `, from ${formatLongDate(checkIn)}` : ''}.{'\n'}
-        Estimated {formatKES(total)}, paid at the hotel with M-Pesa or card.
-        Demo only, no booking is made.
+        {formatKES(room.nightly)} per night, estimated {formatKES(total)} in
+        total, paid at the hotel with M-Pesa or card. Demo only, no booking is
+        made.
       </Tray.Description>
       <Tray.Close asChild>
         <TikitiButton label="Done" />
@@ -356,6 +407,9 @@ const styles = StyleSheet.create({
   },
   scroll: {
     maxHeight: 560,
+  },
+  rate: {
+    alignItems: 'flex-end',
   },
   section: {
     gap: 8,

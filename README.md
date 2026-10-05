@@ -8,16 +8,18 @@ Based on [rit3zh/morphlet](https://github.com/rit3zh/morphlet) (MIT). The librar
 
 ## What's Kenyan about it
 
-- **Tikiti** (`example/src/screens/tikiti-screen.tsx`) follows morphlet's concert demo: an artist page whose buttons morph into one tray that covers the whole night out.
-  1. **Upcoming Concerts**: shows grouped by month at Kenyan venues: Kasarani Stadium, Uhuru Gardens, Fort Jesus, Mama Ngina Waterfront, Jomo Kenyatta Sports Ground (Kisumu), Afraha Stadium (Nakuru) and Kipchoge Keino Stadium (Eldoret).
-  2. **Concert**: a live map of the venue with the date, time, **Directions** and **Tickets**.
-  3. **Directions**: the route from your location with **Ride**, Drive, Walk and Matatu tabs, plus a local tip. Drive, Walk and Matatu hand off to Apple or Google Maps. **Ride** books a Boda Boda, Tuk-Tuk or car priced in KSh by distance, then shows the driver and their yellow number plate.
-  4. **Tickets**: General Admission, Reserved Seat, Front Pit or VIP in KSh, up to 8 per order.
-  5. **Checkout**, stacked on top: name and Kenyan phone number (`07…`, `01…`, `+254…`), pay with M-Pesa or Airtel Money, a simulated STK push, then **"Uko ndani! You're going"**. Tickets go to your phone by SMS.
-- **Where to Stay**: 76 well-known hotels, beach resorts, safari lodges and camps across Nairobi, the Coast, Western & Nyanza, the Rift Valley, Mount Kenya & Central and the safari parks (Maasai Mara, Amboseli, Tsavo, Shaba). Each concert lists hotels nearest the venue. The artist page has a nationwide list by region. Pick nights and rooms, see an estimated total, get directions or reserve (demo).
+- **Tikiti** (`example/src/screens/tikiti-screen.tsx`) is an events platform for Kenya, built on morphlet's morphing trays.
+  - **Discover**: every upcoming event from every organiser, filtered by city (Nairobi, Mombasa, Kisumu, Nakuru, Eldoret) and category (concert, festival, comedy, sports, culture, conference). Each event morphs into a tray with:
+    - **Event**: a venue map, date, time, organiser and description.
+    - **Tickets**: the organiser's own ticket types in KSh, up to 8 per order. **Checkout** is stacked on top: name and Kenyan phone number, then M-Pesa or Airtel Money with a simulated STK push. Free tickets skip payment.
+    - **Directions** with **Ride**, Drive, Walk and Matatu. Ride books a Boda Boda, Tuk-Tuk or car priced in KSh. The other modes open Apple or Google Maps.
+    - **Where to Stay**: hotels nearest the venue.
+  - **For organisers**: companies create an organiser account, then post events in steps: details → venue (from the catalogue, or any venue in a city) → date and time → up to 5 ticket types with price and capacity → review → publish. They can see and delete their own events.
+  - **Featured tour** (`/artist`): the original artist page, following morphlet's concert demo, for the fictional artist Nyota.
+- **Where to Stay**: 76 well-known hotels, beach resorts, safari lodges and camps in six regions. Each has room types with **nightly rates** and meal plans: bed & breakfast for hotels, half board for beach resorts, full board for lodges and camps. Pick a room, nights and rooms to see _rate × nights × rooms_, then get directions or reserve (demo).
 - **Playground**: the Send and Activity demos use M-Pesa, Airtel Money and bank balances in KES with Kenyan names, in place of crypto.
 
-Data lives in `example/src/components/tikiti/tikiti.data.ts` and `hotels.data.ts`. The artist, tour, ticket prices and drivers are fictional. Hotels are real places, but the list is curated, not complete, and their rates are rough indications. Coordinates are approximate, and nothing is charged or booked.
+Seed data lives in `example/src/components/tikiti/events.data.ts`, `hotels.data.ts` and `tikiti.data.ts`. The starting organisers, artists, events, ticket prices and drivers are fictional. Hotels are real places, but the list is curated, not complete, and their rates are rough indications. Coordinates are approximate, and nothing is charged or booked.
 
 ### Maps setup
 
@@ -30,6 +32,26 @@ bun example android
 ```
 
 Expo loads `example/.env` automatically, and `example/app.config.js` passes the key to the `react-native-maps` config plugin. `.env` is gitignored, so the key is never committed. A Maps key ends up inside the Android app, so restrict it to your package name and signing certificate in Google Cloud Console.
+
+### Firebase setup
+
+Posted events and organiser accounts use **Firebase** (Auth plus Firestore). Without a Firebase config, the app falls back to storing them on the phone, behind the same interface (`events.backend.ts`).
+
+1. In the [Firebase console](https://console.firebase.google.com/) for project `social-app-2d78a`, open **Project settings → General → Your apps** and add a **Web app** if there isn't one. Copy its `apiKey` and `appId` into `example/.env`. The other `EXPO_PUBLIC_FIREBASE_*` values are already filled in; see `example/.env.example`.
+2. **Authentication → Sign-in method**: enable **Email/Password**.
+3. **Firestore Database**: create a database, then deploy the rules in `example/firebase/`:
+
+   ```sh
+   cd example/firebase
+   npx firebase-tools login
+   npx firebase-tools deploy --only firestore:rules
+   ```
+
+   Anyone can read events. Only a signed-in organiser can post, and only the organiser who posted an event can change or delete it.
+
+Data model: `events/{eventId}` (the event with `organizerId`) and `organizers/{uid}` (company name, phone and email).
+
+The app only needs the public Web config. **Never put a service account (Admin SDK) key in the app or in git.** `.gitignore` blocks the usual file names.
 
 ## Installation
 

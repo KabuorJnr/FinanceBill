@@ -192,3 +192,92 @@ export function hotelsByRegion() {
 export function describeHotel(hotel: IHotel) {
   return `${hotel.class} ${HOTEL_KINDS[hotel.kind].label.toLowerCase()}`;
 }
+
+export type TMealPlan =
+  'Room only' | 'Bed & breakfast' | 'Half board' | 'Full board';
+
+export interface IRoomType {
+  id: string;
+  name: string;
+  detail: string;
+  mealPlan: TMealPlan;
+  /** Indicative rate in KES per room per night. */
+  nightly: number;
+}
+
+function roundRate(amount: number) {
+  return Math.round(amount / 500) * 500;
+}
+
+/** Room types and nightly rates, scaled from the hotel's entry rate. */
+export function roomsFor(hotel: IHotel): IRoomType[] {
+  const rate = (factor: number) => roundRate(hotel.from * factor);
+  switch (hotel.kind) {
+    case 'resort':
+      return [
+        {
+          id: 'standard',
+          name: 'Standard Room',
+          detail: 'Garden view, sleeps 2',
+          mealPlan: 'Half board',
+          nightly: hotel.from,
+        },
+        {
+          id: 'sea-view',
+          name: 'Sea View Room',
+          detail: 'Ocean-facing balcony, sleeps 2',
+          mealPlan: 'Half board',
+          nightly: rate(1.35),
+        },
+        {
+          id: 'suite',
+          name: 'Beach Suite',
+          detail: 'Lounge and terrace, sleeps 3',
+          mealPlan: 'Half board',
+          nightly: rate(2),
+        },
+      ];
+    case 'lodge':
+    case 'camp':
+      return [
+        {
+          id: 'standard',
+          name: hotel.kind === 'camp' ? 'Safari Tent' : 'Standard Room',
+          detail: 'Sleeps 2',
+          mealPlan: 'Full board',
+          nightly: hotel.from,
+        },
+        {
+          id: 'family',
+          name: 'Family Room',
+          detail: 'Sleeps 4, two bedrooms',
+          mealPlan: 'Full board',
+          nightly: rate(1.7),
+        },
+      ];
+    default:
+      return [
+        {
+          id: 'standard',
+          name: 'Standard Room',
+          detail: 'Queen bed, sleeps 2',
+          mealPlan: 'Bed & breakfast',
+          nightly: hotel.from,
+        },
+        {
+          id: 'deluxe',
+          name: 'Deluxe Room',
+          detail: 'King bed and city view',
+          mealPlan: 'Bed & breakfast',
+          nightly: rate(1.4),
+        },
+        {
+          id: 'suite',
+          name: 'Executive Suite',
+          detail: 'Separate lounge, lounge access',
+          mealPlan: 'Bed & breakfast',
+          nightly: rate(2.2),
+        },
+      ];
+  }
+}

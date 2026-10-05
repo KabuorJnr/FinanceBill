@@ -35,23 +35,41 @@ function city(
   };
 }
 
-const NAIROBI = city(
+export const NAIROBI = city(
   'nairobi',
   'Nairobi',
   'Kenyatta Avenue, CBD',
   -1.2841,
   36.8219
 );
-const MOMBASA = city('mombasa', 'Mombasa', 'Moi Avenue', -4.0614, 39.6712);
-const KISUMU = city(
+export const MOMBASA = city(
+  'mombasa',
+  'Mombasa',
+  'Moi Avenue',
+  -4.0614,
+  39.6712
+);
+export const KISUMU = city(
   'kisumu',
   'Kisumu',
   'Oginga Odinga Street',
   -0.1022,
   34.7617
 );
-const NAKURU = city('nakuru', 'Nakuru', 'Kenyatta Avenue', -0.2866, 36.0672);
-const ELDORET = city('eldoret', 'Eldoret', 'Uganda Road', 0.5167, 35.2733);
+export const NAKURU = city(
+  'nakuru',
+  'Nakuru',
+  'Kenyatta Avenue',
+  -0.2866,
+  36.0672
+);
+export const ELDORET = city(
+  'eldoret',
+  'Eldoret',
+  'Uganda Road',
+  0.5167,
+  35.2733
+);
 
 function venue(
   id: string,
@@ -138,78 +156,113 @@ export const VENUES = {
   ),
 } satisfies Record<string, IVenue>;
 
-export const ARTIST = {
-  name: 'Nyota',
-  initials: 'NY',
-  tour: 'Sauti ya Mtaa Tour 2026',
-  genre: 'Afro-pop · Benga',
-  latest: { title: 'Mtaa Wetu', kind: 'Single', date: '12 Sep 2026' },
-  songs: [
-    { title: 'Mtaa Wetu', album: 'Mtaa Wetu · Single', year: '2026' },
-    { title: 'Nairobi Nights', album: 'Jua Kali', year: '2025' },
-    { title: 'Pole Pole', album: 'Jua Kali', year: '2025' },
-    { title: 'Lamu Sunset', album: 'Pwani', year: '2024' },
-  ],
-};
-
-export interface IShow {
-  id: string;
-  venue: IVenue;
-  /** ISO date in East Africa Time. */
-  date: string;
-  time: string;
-}
-
-function show(venueRef: IVenue, date: string, time = '19:30'): IShow {
-  return { id: `${venueRef.id}-${date}`, venue: venueRef, date, time };
-}
-
-export const SHOWS: IShow[] = [
-  show(VENUES.kasarani, '2026-10-29'),
-  show(VENUES.uhuruGardens, '2026-11-06'),
-  show(VENUES.uhuruGardens, '2026-11-07'),
-  show(VENUES.fortJesus, '2026-11-14', '19:00'),
-  show(VENUES.fortJesus, '2026-11-15', '19:00'),
-  show(VENUES.jomoGround, '2026-11-21', '18:30'),
-  show(VENUES.afraha, '2026-11-22', '18:30'),
-  show(VENUES.kipKeino, '2026-11-28', '18:00'),
-  show(VENUES.kasarani, '2026-12-12', '20:00'),
-  show(VENUES.mamaNgina, '2026-12-31', '21:00'),
+const MORE_VENUES: IVenue[] = [
+  venue(
+    'kicc',
+    'KICC',
+    'CBD',
+    NAIROBI,
+    -1.2884,
+    36.8233,
+    'CBD parking is scarce after 5 PM. Matatus stop on Moi Avenue.'
+  ),
+  venue(
+    'carnivore',
+    'Carnivore Grounds',
+    'Lang’ata',
+    NAIROBI,
+    -1.3275,
+    36.8065,
+    'Lang’ata Road backs up on event nights. Arrive early.'
+  ),
+  venue(
+    'ngong-racecourse',
+    'Ngong Racecourse',
+    'Ngong Road',
+    NAIROBI,
+    -1.3047,
+    36.7425,
+    'Use the Ngong Road entrance. Parking is on the grass.'
+  ),
+  venue(
+    'nyayo',
+    'Nyayo National Stadium',
+    'South B',
+    NAIROBI,
+    -1.3045,
+    36.8247,
+    'Mombasa Road gets busy before kick-off. Leave early.'
+  ),
+  venue(
+    'national-theatre',
+    'Kenya National Theatre',
+    'CBD',
+    NAIROBI,
+    -1.2783,
+    36.8156,
+    'Next to the University of Nairobi. Easy to reach by matatu.'
+  ),
+  venue(
+    'sarit-expo',
+    'Sarit Expo Centre',
+    'Westlands',
+    NAIROBI,
+    -1.261,
+    36.8026,
+    'Park in the Sarit Centre basement.'
+  ),
+  venue(
+    'msa-sports-club',
+    'Mombasa Sports Club',
+    'Tudor',
+    MOMBASA,
+    -4.0558,
+    39.672,
+    'A short tuk-tuk ride from the CBD.'
+  ),
+  venue(
+    'dunga',
+    'Dunga Beach',
+    'Lake Victoria',
+    KISUMU,
+    -0.1452,
+    34.7369,
+    'The road to Dunga is unlit at night. Take a ride back.'
+  ),
+  venue(
+    'menengai',
+    'Menengai Crater',
+    'Nakuru North',
+    NAKURU,
+    -0.2,
+    36.07,
+    'The crater road is steep and rough. A 4x4 helps.'
+  ),
 ];
 
-export interface ITier {
-  id: string;
-  name: string;
-  detail: string;
-  price: number;
+export const CITIES = [NAIROBI, MOMBASA, KISUMU, NAKURU, ELDORET];
+
+export const VENUE_LIST: IVenue[] = [...Object.values(VENUES), ...MORE_VENUES];
+
+export function venueById(id: string): IVenue | undefined {
+  return VENUE_LIST.find((option) => option.id === id);
 }
 
-export const TIERS: ITier[] = [
-  {
-    id: 'ga',
-    name: 'General Admission',
-    detail: 'Standing room on the floor',
-    price: 2500,
-  },
-  {
-    id: 'reserved',
-    name: 'Reserved Seat',
-    detail: 'In the stands, assigned seat',
-    price: 4000,
-  },
-  {
-    id: 'pit',
-    name: 'Front Pit',
-    detail: 'Closest to the stage',
-    price: 7500,
-  },
-  {
-    id: 'vip',
-    name: 'VIP Package',
-    detail: 'Early entry and a merch bundle',
-    price: 15000,
-  },
-];
+/** A venue an organiser typed in. Pinned at the city centre until geocoded. */
+export function customVenue(
+  venueCity: ICity,
+  name: string,
+  area: string
+): IVenue {
+  return {
+    id: `custom-${venueCity.id}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    name,
+    area: area || venueCity.name,
+    city: venueCity,
+    coordinate: venueCity.origin.coordinate,
+    tip: 'Location is approximate. Check the organiser’s directions before you leave.',
+  };
+}
 
 export const MAX_TICKETS = 8;
 
@@ -444,15 +497,44 @@ export function formatLongDate(date: string): string {
   return `${longDay}, ${day} ${month} ${year}`;
 }
 
-export function groupByMonth(shows: IShow[]) {
-  const groups: { month: string; shows: IShow[] }[] = [];
-  for (const item of shows) {
-    const { month } = dateParts(item.date);
-    const group = groups.find((existing) => existing.month === month);
-    if (group) group.shows.push(item);
-    else groups.push({ month, shows: [item] });
+export function groupByMonth<T extends { date: string }>(items: T[]) {
+  const groups: { month: string; items: T[] }[] = [];
+  for (const item of items) {
+    const { month, year } = dateParts(item.date);
+    const label = `${month} ${year}`;
+    const group = groups.find((existing) => existing.month === label);
+    if (group) group.items.push(item);
+    else groups.push({ month: label, items: [item] });
   }
   return groups;
+}
+
+/** Today in East Africa Time as YYYY-MM-DD. */
+export function todayInKenya(now = new Date()): string {
+  const eat = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  return eat.toISOString().slice(0, 10);
+}
+
+export function isValidDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year!, month! - 1, day!));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month! - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+export function isValidTime(value: string): boolean {
+  const match = value.match(/^(\d{1,2}):(\d{2})$/);
+  return !!match && Number(match[1]) < 24 && Number(match[2]) < 60;
+}
+
+export function addDays(date: string, days: number): string {
+  const [year, month, day] = date.split('-').map(Number);
+  const next = new Date(Date.UTC(year!, month! - 1, day! + days));
+  return next.toISOString().slice(0, 10);
 }
 
 export function formatKES(amount: number): string {
@@ -460,6 +542,10 @@ export function formatKES(amount: number): string {
     .toString()
     .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   return `KSh ${whole}`;
+}
+
+export function formatPrice(amount: number): string {
+  return amount === 0 ? 'Free' : formatKES(amount);
 }
 
 export function formatKm(km: number): string {

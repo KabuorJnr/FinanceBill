@@ -15,7 +15,8 @@ interface IExample {
 const EXAMPLES: IExample[] = [
   {
     title: 'Tikiti',
-    subtitle: 'Concert tickets, directions and rides, paid with M-Pesa.',
+    subtitle:
+      'Events across Kenya: tickets, hotels and rides. Organisers post their own.',
     icon: 'ticket.fill',
     href: '/tikiti',
   },
