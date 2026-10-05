@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig",
+  "exclude": [
+    "apple-music-code",
+    "example",
+    "inspo",
+    "lib",
+    "src/**/__tests__",
+    "website"
+  ]
+}

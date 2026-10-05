@@ -1,0 +1,92 @@
+name: Android APK
+
+# Builds an installable APK of the Tikiti example app. Download it from the
+# run's "Artifacts" section. Optional repository secrets fill example/.env:
+# GOOGLE_MAPS_API_KEY, EXPO_PUBLIC_FIREBASE_API_KEY, EXPO_PUBLIC_FIREBASE_APP_ID,
+# EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID, EXPO_PUBLIC_MICROSOFT_CLIENT_ID.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - claude/epic-faraday-o0j9j3
+    paths:
+      - 'example/**'
+      - 'src/**'
+      - 'android/**'
+      - 'common/**'
+      - 'package.json'
+      - 'bun.lock'
+      - '.github/workflows/android-apk.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Write example/.env
+        working-directory: example
+        env:
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          FIREBASE_API_KEY: ${{ secrets.EXPO_PUBLIC_FIREBASE_API_KEY }}
+          FIREBASE_APP_ID: ${{ secrets.EXPO_PUBLIC_FIREBASE_APP_ID }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
+          MICROSOFT_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_MICROSOFT_CLIENT_ID }}
+        run: |
+          cat > .env <<ENV
+          GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_API_KEY
+          EXPO_PUBLIC_FIREBASE_API_KEY=$FIREBASE_API_KEY
+          EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=social-app-2d78a.firebaseapp.com
+          EXPO_PUBLIC_FIREBASE_PROJECT_ID=social-app-2d78a
+          EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=social-app-2d78a.firebasestorage.app
+          EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=108837811972
+          EXPO_PUBLIC_FIREBASE_APP_ID=$FIREBASE_APP_ID
+          EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID
+          EXPO_PUBLIC_MICROSOFT_CLIENT_ID=$MICROSOFT_CLIENT_ID
+          EXPO_PUBLIC_MICROSOFT_TENANT=common
+          ENV
+
+      - name: Install Skia native binaries
+        # Bun can skip dependency install scripts; Skia's copies its prebuilt
+        # Android/iOS libraries into place and the native build needs them.
+        working-directory: example
+        run: node "$(dirname "$(node -p "require.resolve('@shopify/react-native-skia/package.json')")")/scripts/install-libs.js"
+
+      - name: Generate the Android project
+        working-directory: example
+        run: bunx expo prebuild --platform android --no-install
+
+      - name: Build release APK
+        working-directory: example/android
+        # The template signs release builds with the debug key, so the APK
+        # installs directly. Use your own keystore before publishing to Play.
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tikiti-android-apk
+          path: example/android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 30
