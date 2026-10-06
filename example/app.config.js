@@ -13,13 +13,26 @@ const googleIosUrlScheme = googleIosClientId
     )}`
   : null;
 
+const mapsApiKey =
+  process.env.GOOGLE_MAPS_API_KEY ||
+  'AIzaSyBUdFtU5RbZkr7CjIsiHaToYZ1qxzduHrw';
+
 module.exports = ({ config }) => ({
   ...config,
+  android: {
+    ...config.android,
+    config: {
+      ...config.android?.config,
+      googleMaps: {
+        apiKey: mapsApiKey,
+      },
+    },
+  },
   plugins: [
     ...(config.plugins ?? []),
     [
       'react-native-maps',
-      { androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY },
+      { androidGoogleMapsApiKey: mapsApiKey },
     ],
     'expo-web-browser',
     // The plugin requires the iOS scheme; Android needs no plugin options.

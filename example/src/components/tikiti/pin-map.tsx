@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Component, useEffect, useState, type ReactNode } from 'react';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker, Polyline, type LatLng } from 'react-native-maps';
 
 import { SymbolView, type SFSymbol } from '../symbol-view';
@@ -19,6 +19,25 @@ interface IPinMapProps {
   height?: number;
 }
 
+class MapErrorBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: unknown) {
+    console.warn('Map rendering error caught:', error);
+  }
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
 // Custom marker views are rasterised on Android; keep tracking changes just
 // long enough to render them, then freeze for performance.
 function useTracksViewChanges() {
@@ -30,7 +49,7 @@ function useTracksViewChanges() {
   return Platform.OS === 'android' ? tracks : false;
 }
 
-export function PinMap({ pins, origin, height = 150 }: IPinMapProps) {
+function PinMapContent({ pins, origin, height = 150 }: IPinMapProps) {
   const points = pins.map((pin) => pin.coordinate);
   const region = regionFor(origin ? [origin, ...points] : points);
   const tracksViewChanges = useTracksViewChanges();
@@ -101,12 +120,45 @@ export function PinMap({ pins, origin, height = 150 }: IPinMapProps) {
   );
 }
 
+export function PinMap(props: IPinMapProps) {
+  const height = props.height ?? 150;
+  const fallback = (
+    <View style={[styles.map, styles.fallbackMap, { height }]}>
+      <SymbolView
+        name="map.fill"
+        size={36}
+        weight="semibold"
+        tintColor="rgba(255, 255, 255, 0.4)"
+      />
+      <Text style={styles.fallbackText}>Interactive Venue Map</Text>
+    </View>
+  );
+
+  return (
+    <MapErrorBoundary fallback={fallback}>
+      <PinMapContent {...props} />
+    </MapErrorBoundary>
+  );
+}
+
 const styles = StyleSheet.create({
   map: {
     overflow: 'hidden',
     borderRadius: 18,
     borderCurve: 'continuous',
     backgroundColor: tikitiColors.card,
+  },
+  fallbackMap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  fallbackText: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontWeight: '600',
   },
   origin: {
     width: 16,
@@ -116,7 +168,6 @@ const styles = StyleSheet.create({
     borderColor: tikitiColors.text,
     backgroundColor: '#0A84FF',
   },
-  // The reference shows a soft ring around the venue pin.
   halo: {
     width: 64,
     height: 64,

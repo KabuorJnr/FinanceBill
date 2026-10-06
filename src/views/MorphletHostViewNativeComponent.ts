@@ -1,5 +1,5 @@
 import type { CodegenTypes, ColorValue, ViewProps } from 'react-native';
-import { codegenNativeComponent } from 'react-native';
+import { Platform, View, codegenNativeComponent, type HostComponent } from 'react-native';
 
 type TNativeSpring = Readonly<{
   mass?: CodegenTypes.WithDefault<CodegenTypes.Double, 0>;
@@ -45,4 +45,4 @@ interface INativeHostViewProps extends ViewProps {
 
 export type { TInsetsChangeEvent, INativeHostViewProps };
 
-export default codegenNativeComponent<INativeHostViewProps>('MorphletHostView');
+export default (Platform.OS === 'ios' ? codegenNativeComponent<INativeHostViewProps>('MorphletHostView') : (View as unknown as HostComponent<INativeHostViewProps>));

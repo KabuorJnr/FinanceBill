@@ -1,5 +1,5 @@
 import type { CodegenTypes, ViewProps } from 'react-native';
-import { codegenNativeComponent } from 'react-native';
+import { Platform, View, codegenNativeComponent, type HostComponent } from 'react-native';
 
 type TNativeSpring = Readonly<{
   mass?: CodegenTypes.WithDefault<CodegenTypes.Double, 0>;
@@ -19,6 +19,6 @@ interface INativeSwitchViewProps extends ViewProps {
 
 export type { INativeSwitchViewProps };
 
-export default codegenNativeComponent<INativeSwitchViewProps>(
-  'MorphletSwitchView'
-);
+export default (Platform.OS === 'ios'
+  ? codegenNativeComponent<INativeSwitchViewProps>('MorphletSwitchView')
+  : (View as unknown as HostComponent<INativeSwitchViewProps>));
