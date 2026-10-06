@@ -21,6 +21,7 @@ import { useEvents } from './events.store';
 import { normalizeKenyanPhone } from './tikiti.data';
 import { Field, Group, TikitiButton, tikitiType } from './tikiti-parts';
 import { tikitiColors } from './tikiti.theme';
+import { sfFont } from '../../utils';
 
 const MIN_PASSWORD = 8;
 
