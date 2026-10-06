@@ -81,7 +81,7 @@ jobs:
         working-directory: example/android
         # The template signs release builds with the debug key, so the APK
         # installs directly. Use your own keystore before publishing to Play.
-        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a,x86_64
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -90,3 +90,4 @@ jobs:
           path: example/android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 30
+

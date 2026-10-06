@@ -136,4 +136,3 @@ const styles = StyleSheet.create({
     backgroundColor: tikitiColors.accent,
   },
 });
-
