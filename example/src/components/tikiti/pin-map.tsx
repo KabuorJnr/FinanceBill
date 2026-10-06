@@ -43,12 +43,16 @@ export function PinMap({ pins, origin, height = 150 }: IPinMapProps) {
         region={region}
         userInterfaceStyle="dark"
         customMapStyle={DARK_MAP_STYLE}
-        scrollEnabled={false}
-        zoomEnabled={false}
-        rotateEnabled={false}
-        pitchEnabled={false}
-        toolbarEnabled={false}
-        showsPointsOfInterests={false}
+        scrollEnabled={true}
+        zoomEnabled={true}
+        rotateEnabled={true}
+        pitchEnabled={true}
+        toolbarEnabled={true}
+        showsCompass={true}
+        showsScale={true}
+        showsBuildings={true}
+        showsIndoors={true}
+        showsPointsOfInterests={true}
       >
         {origin && target && (
           <>
@@ -132,3 +136,4 @@ const styles = StyleSheet.create({
     backgroundColor: tikitiColors.accent,
   },
 });
+
