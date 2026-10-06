@@ -34,6 +34,7 @@ import {
   type IEvent,
   type TCategory,
 } from '../components/tikiti';
+import { sfFont } from '../utils';
 
 interface IPressableRefProps extends Omit<PressableProps, 'style'> {
   ref?: Ref<ComponentRef<typeof Pressable>>;
@@ -99,10 +100,16 @@ export default function TikitiScreen() {
           style={({ pressed }) => [styles.featured, pressed && styles.pressed]}
         >
           <View style={styles.featuredBody}>
-            <Text style={styles.featuredEyebrow}>FEATURED TOUR</Text>
+            <View style={styles.featuredBadgeRow}>
+              <Text style={styles.featuredEyebrow}>FEATURED TOUR</Text>
+              <View style={styles.livePill}>
+                <View style={styles.liveDot} />
+                <Text style={styles.liveText}>TRENDING</Text>
+              </View>
+            </View>
             <Text style={styles.featuredTitle}>{NYOTA_TOUR.artist}</Text>
             <Text style={styles.featuredCaption}>
-              {NYOTA_TOUR.title} · {tourStops.length} shows
+              {NYOTA_TOUR.title} · {tourStops.length} shows across Kenya
             </Text>
           </View>
           <KenyaBand />
@@ -135,14 +142,14 @@ export default function TikitiScreen() {
           )}
         </View>
 
-        <Text style={[tikitiType.title, styles.sectionTitle]}>
+        <Text style={styles.sectionTitle}>
           Where to Stay
         </Text>
         <HotelsTray>
           <StayCard />
         </HotelsTray>
 
-        <Text style={[tikitiType.caption, styles.footnote]}>
+        <Text style={styles.footnote}>
           {backend === 'firebase'
             ? 'Organisers’ events are live from Firebase.'
             : 'Firebase isn’t configured, so posted events stay on this phone.'}
@@ -169,7 +176,7 @@ function RoundButton({
     >
       <SymbolView
         name={icon}
-        size={15}
+        size={16}
         weight="semibold"
         tintColor={tikitiColors.text}
       />
@@ -206,7 +213,7 @@ function Filters<TValue extends string>({
             onPress={() => onChange(option.value)}
             style={[styles.chip, selected && styles.chipSelected]}
           >
-            <Text style={[tikitiType.caption, selected && styles.chipText]}>
+            <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
               {option.label}
             </Text>
           </Pressable>
@@ -222,7 +229,7 @@ function EventRow({ event, ...rest }: IPressableRefProps & { event: IEvent }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${event.title}, ${weekday} ${day} ${monthShort}`}
+      accessibilityLabel={'item-' + event.id}
       {...rest}
       style={({ pressed }) => [styles.event, pressed && styles.pressed]}
     >
@@ -231,20 +238,25 @@ function EventRow({ event, ...rest }: IPressableRefProps & { event: IEvent }) {
         <Text style={styles.dateDay}>{day}</Text>
       </View>
       <View style={styles.grow}>
-        <Text style={tikitiType.headline} numberOfLines={1}>
+        <Text style={styles.eventTitle} numberOfLines={1}>
           {event.title}
         </Text>
-        <Text style={tikitiType.caption} numberOfLines={1}>
+        <Text style={styles.eventMeta} numberOfLines={1}>
           {weekday} {formatTime(event.time)} · {event.venue.name},{' '}
           {event.venue.city.name}
         </Text>
-        <Text style={tikitiType.caption} numberOfLines={1}>
+        <Text style={styles.eventOrganizer} numberOfLines={1}>
           {category.label} · by {event.organizer.name}
         </Text>
       </View>
-      <Text style={[tikitiType.caption, styles.price]}>
-        {formatPrice(lowestPrice(event))}
-      </Text>
+      <View style={styles.priceContainer}>
+        <Text style={styles.price}>
+          {formatPrice(lowestPrice(event))}
+        </Text>
+        <View style={styles.mpesaBadge}>
+          <Text style={styles.mpesaText}>M-PESA</Text>
+        </View>
+      </View>
     </Pressable>
   );
 }
@@ -259,28 +271,28 @@ function StayCard(props: IPressableRefProps) {
       <View style={styles.stayIcon}>
         <SymbolView
           name="bed.double.fill"
-          size={20}
+          size={22}
           weight="semibold"
-          tintColor={tikitiColors.text}
+          tintColor="#FFFFFF"
         />
       </View>
       <View style={styles.grow}>
-        <Text style={tikitiType.headline}>
+        <Text style={styles.stayTitle}>
           {HOTELS.length} hotels, resorts and lodges
         </Text>
-        <Text style={tikitiType.caption}>Nightly rates by room type</Text>
+        <Text style={styles.stayCaption}>Nightly rates by room type</Text>
       </View>
       <SymbolView
         name="chevron.right"
-        size={13}
+        size={14}
         weight="semibold"
-        tintColor={tikitiColors.textTertiary}
+        tintColor="rgba(255, 255, 255, 0.4)"
       />
     </Pressable>
   );
 }
 
-const GUTTER = 20;
+const GUTTER = 18;
 
 const styles = StyleSheet.create({
   screen: {
@@ -288,7 +300,7 @@ const styles = StyleSheet.create({
     backgroundColor: tikitiColors.background,
   },
   content: {
-    gap: 14,
+    gap: 16,
     paddingHorizontal: GUTTER,
   },
   grow: {
@@ -296,7 +308,8 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   pressed: {
-    opacity: 0.8,
+    opacity: 0.82,
+    transform: [{ scale: 0.985 }],
   },
   header: {
     flexDirection: 'row',
@@ -304,45 +317,83 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   brand: {
-    fontSize: 30,
-    fontWeight: '800',
+    fontSize: 32,
+    ...sfFont('700'),
+    letterSpacing: -0.6,
     color: tikitiColors.text,
   },
   round: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: tikitiColors.card,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
   },
   error: {
-    color: tikitiColors.accent,
+    ...sfFont('500'),
+    color: tikitiColors.accentBright,
   },
   featured: {
     overflow: 'hidden',
-    borderRadius: 22,
+    borderRadius: 24,
     borderCurve: 'continuous',
-    backgroundColor: tikitiColors.kenyaRed,
+    backgroundColor: '#8B0000',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+    shadowColor: '#BB0000',
+    shadowOpacity: 0.4,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
   featuredBody: {
-    gap: 2,
-    padding: 18,
+    gap: 6,
+    padding: 20,
+  },
+  featuredBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  livePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#34D399',
+  },
+  liveText: {
+    fontSize: 9,
+    ...sfFont('700'),
+    letterSpacing: 0.8,
+    color: '#34D399',
   },
   featuredEyebrow: {
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
+    ...sfFont('700'),
+    letterSpacing: 1.2,
     color: 'rgba(255, 255, 255, 0.75)',
   },
   featuredTitle: {
     fontSize: 32,
-    fontWeight: '900',
-    letterSpacing: 2,
-    color: tikitiColors.text,
+    ...sfFont('700'),
+    letterSpacing: -0.5,
+    color: '#FFFFFF',
   },
   featuredCaption: {
     fontSize: 13,
+    ...sfFont('500'),
     color: 'rgba(255, 255, 255, 0.85)',
   },
   bleed: {
@@ -354,75 +405,152 @@ const styles = StyleSheet.create({
     paddingHorizontal: GUTTER,
   },
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
     borderRadius: 999,
-    backgroundColor: tikitiColors.card,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   chipSelected: {
     backgroundColor: tikitiColors.accent,
+    borderColor: tikitiColors.accentBright,
   },
   chipText: {
-    color: tikitiColors.text,
+    fontSize: 13,
+    ...sfFont('600'),
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  chipTextSelected: {
+    color: '#FFFFFF',
   },
   list: {
-    gap: 10,
+    gap: 12,
   },
   empty: {
-    paddingVertical: 24,
+    paddingVertical: 32,
     textAlign: 'center',
+    ...sfFont('500'),
+    color: tikitiColors.textSecondary,
   },
   event: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    borderRadius: 18,
+    gap: 14,
+    padding: 14,
+    borderRadius: 20,
     borderCurve: 'continuous',
-    backgroundColor: tikitiColors.card,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.09)',
+    shadowColor: '#000000',
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   date: {
-    width: 46,
+    width: 48,
     alignItems: 'center',
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+    borderCurve: 'continuous',
   },
   dateMonth: {
     fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    color: 'rgba(255, 255, 255, 0.85)',
+    ...sfFont('700'),
+    letterSpacing: 0.8,
+    color: 'rgba(255, 255, 255, 0.9)',
   },
   dateDay: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: tikitiColors.text,
+    fontSize: 19,
+    ...sfFont('700'),
+    color: '#FFFFFF',
+  },
+  eventTitle: {
+    fontSize: 16,
+    ...sfFont('600'),
+    color: '#FFFFFF',
+  },
+  eventMeta: {
+    fontSize: 13,
+    ...sfFont(),
+    color: 'rgba(255, 255, 255, 0.58)',
+  },
+  eventOrganizer: {
+    fontSize: 12,
+    ...sfFont('500'),
+    color: 'rgba(255, 255, 255, 0.42)',
+  },
+  priceContainer: {
+    alignItems: 'flex-end',
+    gap: 5,
   },
   price: {
-    color: tikitiColors.text,
+    fontSize: 14,
+    ...sfFont('700'),
+    color: '#FFFFFF',
+  },
+  mpesaBadge: {
+    backgroundColor: 'rgba(47, 168, 79, 0.16)',
+    borderColor: 'rgba(47, 168, 79, 0.45)',
+    borderWidth: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  mpesaText: {
+    fontSize: 9,
+    ...sfFont('700'),
+    letterSpacing: 0.6,
+    color: '#34D399',
   },
   sectionTitle: {
-    marginTop: 10,
+    marginTop: 14,
+    marginBottom: 2,
+    fontSize: 20,
+    ...sfFont('700'),
+    color: '#FFFFFF',
   },
   stay: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    padding: 14,
-    borderRadius: 18,
+    padding: 16,
+    borderRadius: 20,
     borderCurve: 'continuous',
-    backgroundColor: tikitiColors.card,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.09)',
+    shadowColor: '#000000',
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   stayIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#0A84FF',
   },
+  stayTitle: {
+    fontSize: 16,
+    ...sfFont('600'),
+    color: '#FFFFFF',
+  },
+  stayCaption: {
+    fontSize: 13,
+    ...sfFont(),
+    color: 'rgba(255, 255, 255, 0.58)',
+  },
   footnote: {
     textAlign: 'center',
-    marginTop: 6,
+    marginTop: 8,
+    ...sfFont(),
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.35)',
   },
 });

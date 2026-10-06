@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
   },
   socialLabel: {
     fontSize: 16,
-    fontWeight: '600',
+    ...sfFont('600'),
     color: '#FFFFFF',
   },
   socialLabelLight: {

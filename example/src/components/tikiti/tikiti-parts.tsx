@@ -635,7 +635,7 @@ const styles = StyleSheet.create({
   },
   plateText: {
     fontSize: 13,
-    fontWeight: '800',
+    ...sfFont('700'),
     letterSpacing: 0.5,
     color: tikitiColors.kenyaBlack,
   },

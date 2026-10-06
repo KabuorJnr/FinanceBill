@@ -18,6 +18,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Tray } from 'morphlet';
+import { sfFont } from '../utils';
 
 import { SymbolView, type SFSymbol } from '../components/symbol-view';
 import {
@@ -443,7 +444,7 @@ const styles = StyleSheet.create({
   },
   pillText: {
     fontSize: 12,
-    fontWeight: '600',
+    ...sfFont('600'),
     color: tikitiColors.text,
   },
   name: {
@@ -569,6 +570,7 @@ const styles = StyleSheet.create({
   },
   infoBio: {
     textAlign: 'center',
+    ...sfFont(),
     color: tikitiColors.textSecondary,
     lineHeight: 22,
   },
