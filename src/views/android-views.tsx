@@ -18,6 +18,20 @@ import type {
 } from './MorphletHostViewNativeComponent';
 import type { INativeSwitchViewProps } from './MorphletSwitchViewNativeComponent';
 
+type TEvent<T> = { nativeEvent: T };
+
+function insets(width: number, height: number): TEvent<TInsetsChangeEvent> {
+  return {
+    nativeEvent: {
+      top: 0,
+      bottom: 0,
+      keyboard: 0,
+      width,
+      height,
+    },
+  };
+}
+
 function getDimensions() {
   const { width, height } = Dimensions.get('window');
   return { width, height };
@@ -63,15 +77,7 @@ function MorphletHostView({
     const sub = Dimensions.addEventListener('change', () => {
       const d = getDimensions();
       setDims(d);
-      onInsetsChange?.({
-        nativeEvent: {
-          top: 0,
-          bottom: 0,
-          keyboard: 0,
-          width: d.width,
-          height: d.height,
-        },
-      } as never);
+      onInsetsChange?.(insets(d.width, d.height) as never);
     });
     return () => sub.remove();
   }, [onInsetsChange]);
@@ -275,6 +281,6 @@ const styles = StyleSheet.create({
   },
 });
 
-export type { TInsetsChangeEvent } from './MorphletHostViewNativeComponent';
+export type { TInsetsChangeEvent };
 
 export { MorphletHostView, MorphletContainerView, MorphletSwitchView };
